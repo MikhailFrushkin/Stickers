@@ -2,24 +2,18 @@ from pathlib import Path
 
 import qdarkstyle
 from PyQt6 import QtCore, QtGui, QtWidgets
+from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtWidgets import QProgressBar, QFileDialog, QMessageBox
 from loguru import logger
 
 from config import Config
+from create_folders import create_folder_order, create_order_shk
+from db import db, Article, Orders, NotFoundArt
+from read_order import read_excel_file
 from settings import Ui_Form
+from update import main_download_site
 
-
-class ProgressBar:
-    def __init__(self, total, progress_bar, current=0):
-        self.current = current
-        self.total = total
-        self.progress_bar = progress_bar
-
-    def update_progress(self):
-        self.current += 1
-        self.progress_bar.update_progress(self.current, self.total)
-
-    def __str__(self):
-        return str(self.current)
+config_prog = Config()
 
 
 class Ui_MainWindow(object):
@@ -195,11 +189,37 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super().__init__()
         self.setupUi(self)
         self.version = 0.1
+        self.name_doc = ''
         self.current_dir = Path.cwd()
+        self.found_articles = []
+        self.not_found_arts = []
+        self.arts = []
+
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setGeometry(10, 10, 100, 25)
+        self.progress_bar.setMaximum(100)
+        self.statusbar.addWidget(self.progress_bar, 1)
+
+        self.status_message = QtWidgets.QLabel()
+        self.statusbar.addPermanentWidget(self.status_message)
 
         # Создаем и добавляем действие для меню
         self.action.triggered.connect(self.setting_dialog)
         self.action_2.triggered.connect(self.close)
+
+        # Ивенты на кнопки
+        self.pushButton.clicked.connect(self.start_update_thread)
+        self.pushButton_3.clicked.connect(self.evt_btn_open_file_clicked)
+        self.pushButton_4.clicked.connect(self.evt_btn_create_files)
+        self.pushButton_5.clicked.connect(self.evt_btn_create_shk)
+
+        self.update_thread = UpdateDatabaseThread()
+        self.update_thread.progress_updated.connect(self.update_progress)
+        self.update_thread.update_progress_message.connect(self.update_status_message)
+
+    def update_progress(self, current_value, total_value):
+        progress = int(current_value / total_value * 100)
+        self.progress_bar.setValue(progress)
 
     def setting_dialog(self, s):
         # Создаем диалоговое окно настроек
@@ -223,6 +243,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ui.checkBox_9.setChecked(params.get("Квадратные наклейки", False))
         ui.checkBox_11.setChecked(params.get("Кружки-сердечко", False))
         ui.LineEdit.setText(str(params.get("Частота обновления", 120)))
+        ui.LineEdit_2.setText(str(params.get("Путь к базе", "C:\\База")))
+        ui.LineEdit_3.setText(str(params.get("Путь к шк", "C:\\База\\ШК")))
+        ui.LineEdit_4.setText(str(params.get("token", "")))
 
         self.ui.pushButton.clicked.connect(self.save_settings)  # Привязываем сохранение к кнопке "Сохранить"
         self.ui.pushButton_2.clicked.connect(self.dialog.close)  # Привязываем закрытие к кнопке "Выход"
@@ -246,6 +269,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             square_stickers = ui.checkBox_9.isChecked()
             heart_mugs = ui.checkBox_11.isChecked()
             update_frequency = int(ui.LineEdit.text())
+            base_path = os.path.abspath(ui.LineEdit_2.text())
+            sh_path = os.path.abspath(ui.LineEdit_3.text())
+            token = ui.LineEdit_4.text()
 
             # Сохраняем настройки в конфигурационный файл
             config = Config()
@@ -261,7 +287,88 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             config.set_param("Квадратные наклейки", square_stickers)
             config.set_param("Кружки-сердечко", heart_mugs)
             config.set_param("Частота обновления", update_frequency)
+            config.set_param("Путь к базе", base_path)
+            config.set_param("Путь к шк", sh_path)
+            config.set_param("token", token)
             self.dialog.accept()
+        except Exception as ex:
+            logger.error(ex)
+
+    def start_update_thread(self):
+        self.update_thread.start()
+
+    def update_status_message(self, text, current_value, total_value):
+        proc = round(current_value / total_value * 100, 3)
+        message = f'{text}: {proc}%'
+        self.status_message.setText(message)
+
+    def evt_btn_open_file_clicked(self):
+        """Ивент на кнопку загрузить файл"""
+        file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir),
+                                                   'CSV файлы (*.csv *.xlsx)')
+        if file_name:
+            try:
+                self.lineEdit.setText(file_name)
+                self.name_doc = os.path.basename(file_name)
+                tuples_list, self.found_articles, self.not_found_arts, self.arts = read_excel_file(self.lineEdit.text())
+                self.tableWidget.setRowCount(0)
+                # Установка выравнивания и шрифта для каждой ячейки в таблице
+                font = QtGui.QFont()
+                font.setPointSize(12)  # Устанавливаем размер шрифта
+                font.setBold(True)  # Делаем шрифт жирным
+                for idx, (art, quantity, found) in enumerate(tuples_list):
+                    self.tableWidget.insertRow(idx)
+
+                    # Заполняем значениями из списка tuples_list и устанавливаем выравнивание и шрифт
+                    for col, text in enumerate(
+                            [str(idx + 1), str(quantity), "✅" if found else "❌", art]):
+                        item = QtWidgets.QTableWidgetItem(text)
+                        if col == 3:  # Если текущий столбец - это столбец "Артикул"
+                            item.setTextAlignment(QtCore.Qt.AlignLeft)  # Устанавливаем выравнивание по левому краю
+                        else:
+                            item.setTextAlignment(
+                                QtCore.Qt.AlignCenter)  # Устанавливаем выравнивание по центру для остальных столбцов
+                        item.setFont(font)  # Устанавливаем шрифт
+                        self.tableWidget.setItem(idx, col, item)
+
+            except Exception as ex:
+                logger.error(f'ошибка чтения xlsx {ex}')
+                QMessageBox.information(self, 'Инфо', f'ошибка чтения xlsx {ex}')
+
+    def evt_btn_create_files(self):
+        """Ивент на кнопку Создать файлы"""
+        filename = self.lineEdit.text()
+        if filename:
+            create_folder_order(self.found_articles, self.name_doc)
+        else:
+            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+
+    def evt_btn_create_shk(self):
+        """Ивент на кнопку Создать ШК"""
+        filename = self.lineEdit.text()
+        if filename:
+            create_order_shk(self.arts)
+        else:
+            QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+
+    def __enter__(self):
+        db.connect()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        db.close()
+
+
+class UpdateDatabaseThread(QThread):
+    progress_updated = pyqtSignal(int, int)
+    update_progress_message = pyqtSignal(str, int, int)
+
+    def run(self):
+        try:
+            self.update_progress_message.emit('Обновление', 0, 100)
+            category = 'Наклейки 3-D'
+            main_download_site(category=category, config=config_prog, self=self)
+            self.progress_updated.emit(100, 100)
+            self.update_progress_message.emit('Обновление', 100, 100)
         except Exception as ex:
             logger.error(ex)
 
@@ -270,10 +377,6 @@ if __name__ == '__main__':
     import sys
     import os
 
-    directories = ['files', 'logs']
-    for dir_name in directories:
-        os.makedirs(dir_name, exist_ok=True)
-
     logger.add(
         "logs/logs.log",
         rotation="20 MB",
@@ -281,12 +384,13 @@ if __name__ == '__main__':
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {file!s} | {line} | {message}"
     )
 
-    config = Config()
-    print("Текущие параметры конфигурации:")
-    print(config.params)
-    config.set_param("Автоматическое обновление", True)
-    print("\nОбновленные параметры конфигурации:")
-    print(config.params)
+    directories = ['files', 'logs', 'base', 'Заказ', 'Файлы связанные с заказом']
+    for dir_name in directories:
+        os.makedirs(dir_name, exist_ok=True)
+
+    db.connect()
+    db.create_tables([Article, Orders, NotFoundArt])
+    db.close()
 
     os.environ['QT_API'] = 'pyqt6'
     app = QtWidgets.QApplication(sys.argv)

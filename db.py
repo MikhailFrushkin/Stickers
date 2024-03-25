@@ -6,27 +6,102 @@ from datetime import datetime
 from loguru import logger
 from peewee import *
 
-db = SqliteDatabase('base.db')
+from utils import remove_russian_letters
+
+db = SqliteDatabase('base/base.db')
 
 
 class Article(Model):
     art = CharField(verbose_name='Артикул', index=True)
     folder = CharField(verbose_name='Папка')
-    nums = IntegerField(verbose_name='Кол-во')
-    nums_in_folder = IntegerField(verbose_name='Кол-во файлов в папке')
-    type = CharField(verbose_name='Тип')
+    quantity = IntegerField(verbose_name='Кол-во')
+    images_in_folder = IntegerField(verbose_name='Кол-во файлов в папке')
+
+    brand = CharField(verbose_name='Бренд', default='AniKoya')
+    category = CharField(verbose_name='Категория')
+
     skin = CharField(verbose_name='Путь к подложке')
     images = TextField(verbose_name='Пути в файлам')
     sticker = CharField(verbose_name='Путь к Шк')
 
-    shop = CharField(verbose_name='Магазин', default='AniKoya')
     created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
 
     class Meta:
         database = db
 
+    def save(self, *args, **kwargs):
+        self.art = self.art.upper()
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.art
+
+    @classmethod
+    def create_art(cls, folder, art, quantity, category, brand):
+        from main import config_prog
+
+        sticker = None
+        skin = None
+
+        art = remove_russian_letters(art).upper()
+        existing_article = cls.get_or_none(art=art, category=category, brand=brand)
+        if existing_article:
+            return existing_article
+
+        folder_name = os.path.abspath(folder)
+        image_filenames = []
+
+        for index, filename in enumerate(os.listdir(folder_name), start=1):
+            file_path = os.path.join(folder_name, filename)
+            if os.path.isfile(file_path):
+                if filename.endswith('.pdf'):
+                    sticker = file_path
+                    shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
+                    logger.success(f'Скопирован шк {filename}')
+                elif filename.strip()[0].isdigit():
+                    image_filenames.append(file_path)
+                elif 'подложка' in filename.lower():
+                    skin = file_path
+        images = ';'.join(image_filenames)
+        images_in_folder = len(image_filenames)
+        if len(image_filenames) != quantity:
+            logger.error(f'не совпадает кол-во: {art}')
+            return
+        if skin and sticker:
+            article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
+                                 brand=brand, quantity=quantity, sticker=sticker, skin=skin,
+                                 images=images, images_in_folder=images_in_folder)
+            logger.success(f'В базу добавлен артикул: {art}')
+            return article
+        else:
+            logger.error(f'Нет подложки или стикера: {art}')
+
+    @classmethod
+    def delete_by_art(cls, art, category, brand):
+        """
+        Удаляет запись из базы данных по артикулу и соответствующую папку на диске.
+        :param art: Артикул записи, которую нужно удалить.
+        :return: True, если запись была найдена и удалена, иначе False.
+        """
+        # Найти запись с заданным артикулом
+        try:
+            article = cls.get(cls.art == art, cls.category == category, cls.brand == brand)
+        except cls.DoesNotExist:
+            return False
+
+        folder_path = article.folder
+        query = cls.delete().where(cls.art == art, cls.category == category, cls.brand == brand)
+        deleted = query.execute()
+
+        # Если запись была успешно удалена, удалить и папку
+        if deleted and folder_path:
+            try:
+                shutil.rmtree(folder_path)
+                return True
+            except Exception as e:
+                logger.error(f"Ошибка при удалении папки: {e}")
+                return False
+        return False
 
 
 class Orders(Model):
@@ -55,8 +130,3 @@ class NotFoundArt(Model):
 
     def __str__(self):
         return self.art
-
-
-db.connect()
-db.create_tables([Article, Orders, NotFoundArt])
-db.close()

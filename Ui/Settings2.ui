@@ -6,17 +6,114 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>397</width>
-    <height>527</height>
+    <width>454</width>
+    <height>717</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="0">
+     <item row="16" column="0">
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="14" column="2">
+      <widget class="QLineEdit" name="LineEdit_3">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="0">
+      <widget class="QLabel" name="Label_5">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>token</string>
+       </property>
+      </widget>
+     </item>
+     <item row="17" column="0">
+      <widget class="QPushButton" name="pushButton">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Сохранить</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="2">
+      <widget class="QLineEdit" name="LineEdit_4">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="17" column="1">
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="font">
+        <font>
+         <pointsize>12</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Выход</string>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="0">
+      <widget class="QLabel" name="Label_4">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Путь к шк</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="2">
+      <widget class="QLineEdit" name="LineEdit">
+       <property name="font">
+        <font>
+         <pointsize>14</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="2">
       <widget class="QLabel" name="Label">
        <property name="font">
         <font>
@@ -28,7 +125,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0" colspan="2">
+     <item row="1" column="0" colspan="3">
       <widget class="QCheckBox" name="checkBox">
        <property name="font">
         <font>
@@ -137,8 +234,8 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
-      <widget class="QCheckBox" name="checkBox_5">
+     <item row="9" column="0" colspan="2">
+      <widget class="QCheckBox" name="checkBox_7">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -162,7 +259,7 @@
         <bool>false</bool>
        </property>
        <property name="text">
-        <string comment="0" extracomment="0">Зеркальца</string>
+        <string comment="0" extracomment="0">Наклейки на карту</string>
        </property>
        <property name="shortcut">
         <string/>
@@ -178,6 +275,162 @@
        </property>
        <property name="tristate">
         <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="0" colspan="2">
+      <widget class="QCheckBox" name="checkBox_9">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="tabletTracking">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string comment="0" extracomment="0">Квадратные наклейки</string>
+       </property>
+       <property name="shortcut">
+        <string/>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+       <property name="autoRepeat">
+        <bool>false</bool>
+       </property>
+       <property name="autoExclusive">
+        <bool>false</bool>
+       </property>
+       <property name="tristate">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="0" colspan="2">
+      <widget class="QLabel" name="Label_2">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Частота обновления (мин.)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="0">
+      <widget class="QCheckBox" name="checkBox_10">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="tabletTracking">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string comment="0" extracomment="0">Брелки</string>
+       </property>
+       <property name="shortcut">
+        <string/>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+       <property name="autoRepeat">
+        <bool>false</bool>
+       </property>
+       <property name="autoExclusive">
+        <bool>false</bool>
+       </property>
+       <property name="tristate">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0" colspan="2">
+      <widget class="QCheckBox" name="checkBox_11">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="tabletTracking">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string comment="0" extracomment="0">Кружки-сердечко</string>
+       </property>
+       <property name="shortcut">
+        <string/>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+       <property name="autoRepeat">
+        <bool>false</bool>
+       </property>
+       <property name="autoExclusive">
+        <bool>false</bool>
+       </property>
+       <property name="tristate">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="0">
+      <widget class="QLabel" name="Label_3">
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+        </font>
+       </property>
+       <property name="text">
+        <string>Путь к базе</string>
        </property>
       </widget>
      </item>
@@ -269,31 +522,7 @@
        </property>
       </widget>
      </item>
-     <item row="14" column="0">
-      <widget class="QPushButton" name="pushButton">
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Сохранить</string>
-       </property>
-      </widget>
-     </item>
-     <item row="14" column="1">
-      <widget class="QPushButton" name="pushButton_2">
-       <property name="font">
-        <font>
-         <pointsize>12</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Выход</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
+     <item row="8" column="0" colspan="2">
       <widget class="QCheckBox" name="checkBox_8">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -337,218 +566,61 @@
        </property>
       </widget>
      </item>
-     <item row="12" column="1">
-      <widget class="QLineEdit" name="LineEdit">
+     <item row="4" column="0">
+      <widget class="QCheckBox" name="checkBox_5">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="sizeIncrement">
+        <size>
+         <width>0</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="font">
+        <font>
+         <pointsize>10</pointsize>
+         <weight>50</weight>
+         <bold>false</bold>
+        </font>
+       </property>
+       <property name="tabletTracking">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string comment="0" extracomment="0">Зеркальца</string>
+       </property>
+       <property name="shortcut">
+        <string/>
+       </property>
+       <property name="checked">
+        <bool>false</bool>
+       </property>
+       <property name="autoRepeat">
+        <bool>false</bool>
+       </property>
+       <property name="autoExclusive">
+        <bool>false</bool>
+       </property>
+       <property name="tristate">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="2">
+      <widget class="QLineEdit" name="LineEdit_2">
        <property name="font">
         <font>
          <pointsize>14</pointsize>
         </font>
        </property>
        <property name="text">
-        <string>120</string>
-       </property>
-      </widget>
-     </item>
-     <item row="11" column="0">
-      <widget class="QCheckBox" name="checkBox_10">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="sizeIncrement">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-         <weight>50</weight>
-         <bold>false</bold>
-        </font>
-       </property>
-       <property name="tabletTracking">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string comment="0" extracomment="0">Брелки</string>
-       </property>
-       <property name="shortcut">
         <string/>
        </property>
-       <property name="checked">
-        <bool>false</bool>
-       </property>
-       <property name="autoRepeat">
-        <bool>false</bool>
-       </property>
-       <property name="autoExclusive">
-        <bool>false</bool>
-       </property>
-       <property name="tristate">
-        <bool>false</bool>
-       </property>
       </widget>
-     </item>
-     <item row="12" column="0">
-      <widget class="QLabel" name="Label_2">
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Частота обновления (мин.)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0">
-      <widget class="QCheckBox" name="checkBox_11">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="sizeIncrement">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-         <weight>50</weight>
-         <bold>false</bold>
-        </font>
-       </property>
-       <property name="tabletTracking">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string comment="0" extracomment="0">Кружки-сердечко</string>
-       </property>
-       <property name="shortcut">
-        <string/>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
-       </property>
-       <property name="autoRepeat">
-        <bool>false</bool>
-       </property>
-       <property name="autoExclusive">
-        <bool>false</bool>
-       </property>
-       <property name="tristate">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0">
-      <widget class="QCheckBox" name="checkBox_7">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="sizeIncrement">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-         <weight>50</weight>
-         <bold>false</bold>
-        </font>
-       </property>
-       <property name="tabletTracking">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string comment="0" extracomment="0">Наклейки на карту</string>
-       </property>
-       <property name="shortcut">
-        <string/>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
-       </property>
-       <property name="autoRepeat">
-        <bool>false</bool>
-       </property>
-       <property name="autoExclusive">
-        <bool>false</bool>
-       </property>
-       <property name="tristate">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="0">
-      <widget class="QCheckBox" name="checkBox_9">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="sizeIncrement">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>10</pointsize>
-         <weight>50</weight>
-         <bold>false</bold>
-        </font>
-       </property>
-       <property name="tabletTracking">
-        <bool>false</bool>
-       </property>
-       <property name="text">
-        <string comment="0" extracomment="0">Квадратные наклейки</string>
-       </property>
-       <property name="shortcut">
-        <string/>
-       </property>
-       <property name="checked">
-        <bool>false</bool>
-       </property>
-       <property name="autoRepeat">
-        <bool>false</bool>
-       </property>
-       <property name="autoExclusive">
-        <bool>false</bool>
-       </property>
-       <property name="tristate">
-        <bool>false</bool>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="0">
-      <spacer name="verticalSpacer">
-       <property name="orientation">
-        <enum>Qt::Vertical</enum>
-       </property>
-       <property name="sizeHint" stdset="0">
-        <size>
-         <width>20</width>
-         <height>40</height>
-        </size>
-       </property>
-      </spacer>
      </item>
     </layout>
    </item>

@@ -63,11 +63,3 @@ def rename_files(file_path: str, new_name: str):
     except Exception as ex:
         logger.error(f'не удалось переименовать файл {file_path}\n{ex}')
 
-
-@dataclass
-class FilesOnPrint:
-    art: str
-    count: int
-    name: Optional[str] = None
-    status: str = '❌'
-    # '✅'

@@ -3,6 +3,10 @@ from pathlib import Path
 
 from loguru import logger
 
+headers = {'Content-Type': 'application/json'}
+# domain = 'http://127.0.0.1:8000/api_rest'
+domain = 'https://mycego.online/api_rest'
+
 
 class Config:
     def __init__(self, filename='config.json'):
@@ -35,6 +39,9 @@ class Config:
                 "Квадратные наклейки": False,
                 "Кружки-сердечко": False,
                 "Частота обновления": 120,
+                "Путь к базе": "C:\\База",
+                "Путь к шк": "C:\\База\\ШК",
+                "token": ""
             }
             self.save_to_file()  # Сохраняем параметры в новый файл
         else:
