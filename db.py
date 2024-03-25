@@ -57,7 +57,7 @@ class Article(Model):
                 if filename.endswith('.pdf'):
                     sticker = file_path
                     shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
-                    logger.success(f'Скопирован шк {filename}')
+                    # logger.success(f'Скопирован шк {filename}')
                 elif filename.strip()[0].isdigit():
                     image_filenames.append(file_path)
                 elif 'подложка' in filename.lower():

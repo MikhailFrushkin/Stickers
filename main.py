@@ -1,3 +1,6 @@
+import shutil
+import threading
+import winreg
 from pathlib import Path
 
 import qdarkstyle
@@ -7,7 +10,7 @@ from PyQt6.QtWidgets import QProgressBar, QFileDialog, QMessageBox
 from loguru import logger
 
 from config import Config
-from create_folders import create_folder_order, create_order_shk
+from create_folders import create_folder_order, create_order_shk, create_bad_arts, upload_file
 from db import db, Article, Orders, NotFoundArt
 from read_order import read_excel_file
 from settings import Ui_Form
@@ -304,8 +307,23 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_open_file_clicked(self):
         """Ивент на кнопку загрузить файл"""
-        file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir),
-                                                   'CSV файлы (*.csv *.xlsx)')
+        def get_download_path():
+            if os.name == 'nt':
+                sub_key = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders'
+                downloads_guid = '{374DE290-123F-4565-9164-39C4925E467B}'
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, sub_key) as key:
+                    location = winreg.QueryValueEx(key, downloads_guid)[0]
+                return location
+            else:
+                return os.path.join(os.path.expanduser('~'), 'downloads')
+
+        try:
+            file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', get_download_path(),
+                                                       'CSV файлы (*.csv *.xlsx)')
+        except Exception as ex:
+            logger.error(ex)
+            file_name, _ = QFileDialog.getOpenFileName(self, 'Загрузить файл', str(self.current_dir),
+                                                       'CSV файлы (*.csv *.xlsx)')
         if file_name:
             try:
                 self.lineEdit.setText(file_name)
@@ -337,9 +355,46 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_create_files(self):
         """Ивент на кнопку Создать файлы"""
+        def bad_arts_fix():
+            try:
+                create_bad_arts(self.not_found_arts, self.name_doc)
+                try:
+                    for file in os.listdir(os.path.join(config_prog.current_dir, 'Заказ')):
+                        if file.startswith('Не найд'):
+                            upload_file(os.path.join(config_prog.current_dir, 'Заказ', file))
+                except Exception as ex:
+                    logger.error(ex)
+
+            except Exception as ex:
+                logger.error(ex)
+
         filename = self.lineEdit.text()
+
         if filename:
-            create_folder_order(self.found_articles, self.name_doc)
+            if self.found_articles:
+                try:
+                    count_arts, count_image = create_folder_order(self.found_articles, self.name_doc)
+                except Exception as ex:
+                    logger.error(ex)
+            else:
+                QMessageBox.warning(self, 'Ой', 'Ничего не найдено')
+
+            if self.not_found_arts:
+                # Запускаем функцию во втором потоке
+                thread = threading.Thread(target=bad_arts_fix)
+                thread.start()
+            QMessageBox.information(self, 'Ура!', 'Завершено!')
+
+            try:
+                shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон 3d.cdr'),
+                             os.path.join(config_prog.current_dir, 'Заказ'))
+            except Exception as ex:
+                logger.error(ex)
+            try:
+                path = os.path.join(config_prog.current_dir, 'Заказ')
+                os.startfile(path)
+            except Exception as ex:
+                logger.error(ex)
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 
@@ -347,7 +402,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """Ивент на кнопку Создать ШК"""
         filename = self.lineEdit.text()
         if filename:
-            create_order_shk(self.arts)
+            if self.arts:
+                try:
+                    create_order_shk(self.arts, self.name_doc)
+                except PermissionError as ex:
+                    logger.error('Нужно закрыть документ')
+                except Exception as ex:
+                    logger.error(ex)
+            else:
+                QMessageBox.information(self, 'Инфо', 'Не найденны шк')
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
 
@@ -364,6 +427,7 @@ class UpdateDatabaseThread(QThread):
 
     def run(self):
         try:
+            self.progress_updated.emit(0, 100)
             self.update_progress_message.emit('Обновление', 0, 100)
             category = 'Наклейки 3-D'
             main_download_site(category=category, config=config_prog, self=self)

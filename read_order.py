@@ -12,9 +12,15 @@ def read_excel_file(file: str):
     tuples_list = None
     found_articles = []
     not_found_arts = []
-
+    arts = []
     try:
-        df = pd.read_excel(file)
+        if file.endswith('.xlsx'):
+            df = pd.read_excel(file)
+        elif file.endswith('.csv'):
+            df = pd.read_csv(file)
+        else:
+            logger.error(f'Ошибка чтения файла {file}')
+            return
         art_column = None
         for i in df.columns:
             if 'артикул' in i.lower():

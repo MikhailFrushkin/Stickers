@@ -32,18 +32,15 @@ def get_info_publish_folder(public_url):
             if file_name:
                 file_name = file_name.strip().lower()
 
-            if (os.path.splitext(file_name)[0].isdigit()
-                    or 'подл' in file_name
-                    or file_name.endswith('.pdf')
-            ):
-                try:
-                    result_data.append({
-                        'name': i.get('name').strip(),
-                        'file': i.get('file')
-                    })
-                except:
-                    pass
+            if os.path.splitext(file_name)[0].isdigit() or 'подл' in file_name or file_name.endswith('.pdf'):
+                result_data.append({'name': i.get('name').strip(), 'file': i.get('file')})
 
+        for i in result_data:
+            if i.get('name').endswith('.pdf'):
+                break
+        else:
+            logger.error(f'Нет шк {public_url}')
+            return
         return result_data
 
 
