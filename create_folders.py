@@ -20,6 +20,7 @@ def create_folder_order(articles, name_doc):
     count = 1
     dir_count = 1
     count_images = 0
+    all_count_images = 0
     directory = os.path.join(config_prog.current_dir, 'Заказ', f'{os.path.splitext(name_doc)[0]}_{dir_count}')
     os.makedirs(directory, exist_ok=True)
 
@@ -40,11 +41,13 @@ def create_folder_order(articles, name_doc):
                 shutil.copy2(image_path, destination_path)
                 count += 1
                 count_images += 1
+                all_count_images += 1
             except Exception as ex:
                 logger.error(ex)
 
     logger.success('Завершено копирование файлов')
-    return len(articles), count_images
+    return len(articles), all_count_images
+
 
 def find_files_in_directory(directory, file_list):
     file_dict = {}
@@ -92,18 +95,18 @@ def create_order_shk(arts, name_doc):
         logger.error(f'{name_doc} ШК не найдены!')
 
 
-def create_bad_arts(arts, name_doc):
+def create_bad_arts(arts, name_doc, version):
     df_not_found = pd.DataFrame(arts, columns=['Артикул'])
     try:
         if len(df_not_found) > 0:
-            df_in_xlsx(df_not_found, f'Не найденные {name_doc}', directory='Заказ')
+            df_in_xlsx(df_not_found, f'Не найденные {name_doc} v.{version}', directory='Заказ')
     except Exception as ex:
         logger.error(ex)
 
 
 def upload_file(loadfile, replace=False):
     from main import config_prog
-    savefile=f'/Отчеты/{os.path.basename(loadfile)}'
+    savefile = f'/Отчеты/{os.path.basename(loadfile)}'
     upload_url = "https://cloud-api.yandex.net/v1/disk/resources/upload"
     headers = {
         "Authorization": f"OAuth {config_prog.params.get('token')}"

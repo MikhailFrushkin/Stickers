@@ -5,7 +5,7 @@ from pathlib import Path
 
 import qdarkstyle
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QThread, pyqtSignal
+from PyQt6.QtCore import QThread, pyqtSignal, QTimer
 from PyQt6.QtWidgets import QProgressBar, QFileDialog, QMessageBox
 from loguru import logger
 
@@ -191,7 +191,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 0.1
+        self.version = 1
         self.name_doc = ''
         self.current_dir = Path.cwd()
         self.found_articles = []
@@ -216,15 +216,34 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.pushButton_4.clicked.connect(self.evt_btn_create_files)
         self.pushButton_5.clicked.connect(self.evt_btn_create_shk)
 
-        self.update_thread = UpdateDatabaseThread()
+        try:
+            if config_prog.params.get('Автоматическое обновление'):
+                self.update_timer = QTimer(self)
+                self.update_timer.timeout.connect(self.start_update_thread)
+                period = int(config_prog.params.get('Частота обновления', 120))
+                self.update_timer.start(period * 60 * 1000)
+        except Exception as ex:
+            logger.error(ex)
+
+        self.update_thread = UpdateDatabaseThread(parent=self)
         self.update_thread.progress_updated.connect(self.update_progress)
         self.update_thread.update_progress_message.connect(self.update_status_message)
+
+    def start_update_thread(self):
+        # Останавливаем таймер, чтобы избежать параллельных запусков
+        self.update_timer.stop()
+        self.update_thread.start()
+        # После завершения обновления снова запускаем таймер
+        self.update_thread.finished.connect(self.update_timer.start)
+
+    def stop_update_thread(self):
+        self.update_timer.stop()
 
     def update_progress(self, current_value, total_value):
         progress = int(current_value / total_value * 100)
         self.progress_bar.setValue(progress)
 
-    def setting_dialog(self, s):
+    def setting_dialog(self):
         # Создаем диалоговое окно настроек
         self.dialog = QtWidgets.QDialog()
         self.ui = Ui_Form()
@@ -297,9 +316,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception as ex:
             logger.error(ex)
 
-    def start_update_thread(self):
-        self.update_thread.start()
-
     def update_status_message(self, text, current_value, total_value):
         proc = round(current_value / total_value * 100, 3)
         message = f'{text}: {proc}%'
@@ -307,6 +323,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def evt_btn_open_file_clicked(self):
         """Ивент на кнопку загрузить файл"""
+
         def get_download_path():
             if os.name == 'nt':
                 sub_key = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders'
@@ -357,7 +374,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """Ивент на кнопку Создать файлы"""
         def bad_arts_fix():
             try:
-                create_bad_arts(self.not_found_arts, self.name_doc)
+                create_bad_arts(self.not_found_arts, self.name_doc, self.version)
                 try:
                     for file in os.listdir(os.path.join(config_prog.current_dir, 'Заказ')):
                         if file.startswith('Не найд'):
@@ -371,9 +388,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         filename = self.lineEdit.text()
 
         if filename:
+            count_arts, count_images = 0, 0
             if self.found_articles:
                 try:
-                    count_arts, count_image = create_folder_order(self.found_articles, self.name_doc)
+                    count_arts, count_images = create_folder_order(self.found_articles, self.name_doc)
                 except Exception as ex:
                     logger.error(ex)
             else:
@@ -383,7 +401,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Запускаем функцию во втором потоке
                 thread = threading.Thread(target=bad_arts_fix)
                 thread.start()
-            QMessageBox.information(self, 'Ура!', 'Завершено!')
+            QMessageBox.information(self, 'Ура!', f'Завершено!\nАртикулов: {count_arts}\nСтикеров: {count_images}')
 
             try:
                 shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон 3d.cdr'),
@@ -409,6 +427,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     logger.error('Нужно закрыть документ')
                 except Exception as ex:
                     logger.error(ex)
+                else:
+                    QMessageBox.information(self, 'Ура!', f'Завершено!')
             else:
                 QMessageBox.information(self, 'Инфо', 'Не найденны шк')
         else:
@@ -422,6 +442,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
 
 class UpdateDatabaseThread(QThread):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
     progress_updated = pyqtSignal(int, int)
     update_progress_message = pyqtSignal(str, int, int)
 
@@ -435,6 +458,10 @@ class UpdateDatabaseThread(QThread):
             self.update_progress_message.emit('Обновление', 100, 100)
         except Exception as ex:
             logger.error(ex)
+
+        # После завершения обновления снова запускаем таймер
+        if self.parent():
+            self.parent().start_update_thread()
 
 
 if __name__ == '__main__':
