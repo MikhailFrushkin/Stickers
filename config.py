@@ -28,16 +28,18 @@ class Config:
             # Если файл не существует, создаем новый файл и записываем в него параметры по умолчанию
             self.params = {
                 "Автоматическое обновление": True,
-                "Значки": False,
-                "Попсокеты": False,
-                "Зеркальца": False,
-                "Постеры": False,
-                "Кружки": False,
-                "3D наклейки": True,
-                "Наклейки на карту": False,
-                "Брелки": False,
-                "Квадратные наклейки": False,
-                "Кружки-сердечко": False,
+                "categories": {
+                    "Значки": False,
+                    "Попсокеты": False,
+                    "Зеркальца": False,
+                    "Постеры": False,
+                    "Кружки": False,
+                    "3D наклейки": True,
+                    "Наклейки на карту": False,
+                    "Брелки": False,
+                    "Квадратные наклейки": False,
+                    "Кружки-сердечко": False
+                },
                 "Частота обновления": 120,
                 "Путь к базе": "C:\\База",
                 "Путь к шк": "C:\\База\\ШК",
@@ -51,11 +53,16 @@ class Config:
 
     def set_param(self, key, value):
         # Устанавливаем новое значение для параметра
+
         if key in self.params:
             self.params[key] = value
             self.save_to_file()  # Сохраняем обновленные параметры в файл
         else:
-            logger.error(f'Параметр "{key}" не найден.')
+            if key in self.params.get('categories'):
+                self.params['categories'][key] = value
+            else:
+                logger.error(f'Параметр "{key}" не найден.')
+        self.save_to_file()
 
 
 if __name__ == '__main__':
