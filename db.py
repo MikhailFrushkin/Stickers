@@ -6,7 +6,7 @@ from datetime import datetime
 from loguru import logger
 from peewee import *
 
-from utils import remove_russian_letters
+from utils.utils import remove_russian_letters
 
 db = SqliteDatabase('base/base.db')
 
@@ -20,9 +20,9 @@ class Article(Model):
     brand = CharField(verbose_name='Бренд', default='AniKoya')
     category = CharField(verbose_name='Категория')
 
-    skin = CharField(verbose_name='Путь к подложке')
+    skin = CharField(verbose_name='Путь к подложке', null=True)
     images = TextField(verbose_name='Пути в файлам')
-    sticker = CharField(verbose_name='Путь к Шк')
+    sticker = CharField(verbose_name='Путь к Шк', null=True)
 
     created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
 
@@ -56,8 +56,9 @@ class Article(Model):
             if os.path.isfile(file_path):
                 if filename.endswith('.pdf'):
                     sticker = file_path
-                    shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
-                    # logger.success(f'Скопирован шк {filename}')
+                    if not os.path.exists(os.path.join(config_prog.params.get('Путь к шк'), filename)):
+                        shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
+                        # logger.success(f'Скопирован шк {filename}')
                 elif filename.strip()[0].isdigit():
                     image_filenames.append(file_path)
                 elif 'подложка' in filename.lower():
@@ -67,14 +68,11 @@ class Article(Model):
         if len(image_filenames) != quantity:
             logger.error(f'не совпадает кол-во: {art}')
             return
-        if skin and sticker:
-            article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
-                                 brand=brand, quantity=quantity, sticker=sticker, skin=skin,
-                                 images=images, images_in_folder=images_in_folder)
-            logger.success(f'В базу добавлен артикул: {art}')
-            return article
-        else:
-            logger.error(f'Нет подложки или стикера: {art}')
+        article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
+                             brand=brand, quantity=quantity, sticker=sticker, skin=skin,
+                             images=images, images_in_folder=images_in_folder)
+        logger.success(f'В базу добавлен артикул: {art}')
+        return article
 
     @classmethod
     def delete_by_art(cls, art, category, brand):

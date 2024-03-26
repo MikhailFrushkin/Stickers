@@ -89,7 +89,6 @@ def main_download_site(category, config, self):
 
     chunk_size = 20
 
-    directory = os.path.join(config.params.get('Путь к базе'), category)
     art_list = get_arts_in_base(category)
     data = get_products(category)
 
@@ -123,7 +122,8 @@ def main_download_site(category, config, self):
                 brand = item['brand']
                 category_prod = item['category']
                 quantity = item['quantity']
-                folder = os.path.join(directory, art)
+                folder = os.path.join(config.params.get('Путь к базе'), brand, category, art)
+
                 if os.path.exists(folder):
                     logger.warning(f'Папка существует {art}, удалена!')
                     shutil.rmtree(folder, ignore_errors=True)

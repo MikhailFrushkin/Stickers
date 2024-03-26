@@ -1,6 +1,6 @@
+import asyncio
 import shutil
 import threading
-import winreg
 from pathlib import Path
 
 import qdarkstyle
@@ -15,7 +15,9 @@ from config import Config
 from create_folders import create_folder_order, create_order_shk, create_bad_arts, upload_file
 from db import db, Article, Orders, NotFoundArt
 from read_order import read_excel_file
-from update import main_download_site
+from update.search_stickers import main_search_sticker
+from update.upadate_db import update_db_in_folder
+from update.update import main_download_site
 
 config_prog = Config()
 
@@ -42,6 +44,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Создаем и добавляем действие для меню
         self.action.triggered.connect(self.setting_dialog)
         self.action_2.triggered.connect(self.close)
+        self.action_7.triggered.connect(self.update_db)
 
         # Ивенты на кнопки
         self.pushButton.clicked.connect(self.start_update_thread)
@@ -61,6 +64,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.update_thread = UpdateDatabaseThread(parent=self)
         self.update_thread.progress_updated.connect(self.update_progress)
         self.update_thread.update_progress_message.connect(self.update_status_message)
+
+    def update_db(self):
+        try:
+            update_db_in_folder(config_prog)
+        except Exception as ex:
+            logger.error(ex)
 
     def start_update_thread(self):
         # Останавливаем таймер, чтобы избежать параллельных запусков
@@ -150,7 +159,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             logger.error(ex)
 
     def update_status_message(self, text, current_value, total_value):
-        proc = round(current_value / total_value * 100, 3)
+        proc = round(current_value / total_value * 100, 2)
         message = f'{text}: {proc}%'
         self.status_message.setText(message)
 
@@ -256,6 +265,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     logger.error(ex)
                 else:
                     QMessageBox.information(self, 'Ура!', f'Завершено!')
+                    try:
+                        path = os.path.join(config_prog.current_dir, 'Заказ')
+                        os.startfile(path)
+                    except Exception as ex:
+                        logger.error(ex)
             else:
                 QMessageBox.information(self, 'Инфо', 'Не найденны шк')
         else:
@@ -286,7 +300,36 @@ class UpdateDatabaseThread(QThread):
         except Exception as ex:
             logger.error(ex)
 
-        # После завершения обновления снова запускаем таймер
+        try:
+            self.progress_updated.emit(0, 100)
+            self.update_progress_message.emit('Поиск шк', 0, 100)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                logger.debug('Поиск шк на яндекс диске')
+                main_search_sticker(config_prog)
+            except Exception as ex:
+                logger.error(ex)
+            self.progress_updated.emit(100, 100)
+            self.update_progress_message.emit('Поиск шк', 100, 100)
+        except Exception as ex:
+            logger.error(ex)
+
+        try:
+            self.progress_updated.emit(0, 100)
+            self.update_progress_message.emit('Поиск шк на CRM', 0, 100)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                logger.debug('Поиск шк на диск CRM')
+                main_search_sticker(config_prog, folder_path='/Новая база (1)')
+            except Exception as ex:
+                logger.error(ex)
+            self.progress_updated.emit(100, 100)
+            self.update_progress_message.emit('Поиск шк на CRM', 100, 100)
+        except Exception as ex:
+            logger.error(ex)
+
         if self.parent():
             self.parent().start_update_thread()
 

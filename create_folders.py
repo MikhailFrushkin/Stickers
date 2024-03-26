@@ -10,7 +10,7 @@ import pandas as pd
 import requests
 from loguru import logger
 
-from utils import df_in_xlsx
+from utils.utils import df_in_xlsx
 
 
 def create_folder_order(articles, name_doc):
