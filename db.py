@@ -24,7 +24,10 @@ class Article(Model):
     images = TextField(verbose_name='Пути в файлам')
     sticker = CharField(verbose_name='Путь к Шк', null=True)
 
+    one_pdf = CharField(verbose_name='Путь к объединенному пдф', null=True)
+
     created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
+    updated_at_in_site = DateTimeField(verbose_name='Время обновления на сайте', null=True)
 
     class Meta:
         database = db
@@ -37,16 +40,22 @@ class Article(Model):
         return self.art
 
     @classmethod
-    def create_art(cls, folder, art, quantity, category, brand):
+    def create_art(cls, folder, art, quantity, category, brand, updated_at_in_site, one_pdf=None):
         from main import config_prog
 
         sticker = None
         skin = None
 
         art = remove_russian_letters(art).upper()
-        existing_article = cls.get_or_none(art=art, category=category, brand=brand)
+        existing_article = cls.get_or_none(art=art, category=category, brand=brand,
+                                           updated_at_in_site=None, one_pdf=one_pdf)
         if existing_article:
             return existing_article
+        else:
+            existing_article = cls.get_or_none(art=art, category=category, brand=brand,
+                                               updated_at_in_site=updated_at_in_site, one_pdf=one_pdf)
+            if existing_article:
+                return existing_article
 
         folder_name = os.path.abspath(folder)
         image_filenames = []

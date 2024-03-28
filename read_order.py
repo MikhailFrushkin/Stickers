@@ -23,7 +23,7 @@ def read_excel_file(file: str):
             return
         art_column = None
         for i in df.columns:
-            if 'артикул' in i.lower():
+            if 'артикул продавца' in i.lower():
                 art_column = i
         if not art_column:
             logger.error(f'Не найден столбец с артикулом')
@@ -48,7 +48,7 @@ def read_excel_file(file: str):
             art_upper = art.upper()  # Приведение артикула из списка к верхнему регистру
             try:
                 # Пытаемся найти артикул в базе данных
-                article = Article.get(Article.art == art_upper)
+                article = Article.select().where(Article.art == art_upper).order_by(Article.updated_at_in_site).first()
                 # Если артикул найден, добавляем его в список найденных объектов модели Article
                 found_articles.append(article)
             except DoesNotExist:

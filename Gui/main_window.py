@@ -200,4 +200,4 @@ class Ui_MainWindow(object):
         self.action_4.setText(_translate("MainWindow", "О программе"))
         self.action_5.setText(_translate("MainWindow", "Удалить артикул"))
         self.action_6.setText(_translate("MainWindow", "Создать артикул"))
-        self.action_7.setText(_translate("MainWindow", "Поиск новых артикулов"))
+        self.action_7.setText(_translate("MainWindow", "Поиск новых артикулов на компьютере"))

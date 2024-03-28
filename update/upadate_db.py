@@ -15,5 +15,6 @@ def update_db_in_folder(config_prog):
             art = os.path.basename(root)
             category = os.path.basename(os.path.dirname(root))
             brand = os.path.basename(os.path.dirname(os.path.dirname(root)))
-            Article.create_art(folder=root, art=art, quantity=quantity, category=category, brand=brand)
+            Article.create_art(folder=root, art=art, quantity=quantity, category=category, brand=brand,
+                               updated_at_in_site=None, one_pdf=None)
             count += 1
