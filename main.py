@@ -2,6 +2,7 @@ import asyncio
 import shutil
 import threading
 from pathlib import Path
+from pprint import pprint
 
 import qdarkstyle
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -258,13 +259,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if filename:
             if self.arts:
                 try:
-                    create_order_shk(self.arts, self.name_doc)
+                    not_found_stickers = create_order_shk(self.arts, self.name_doc)
+                    pprint(not_found_stickers)
                 except PermissionError as ex:
                     logger.error('Нужно закрыть документ')
                 except Exception as ex:
                     logger.error(ex)
                 else:
-                    QMessageBox.information(self, 'Ура!', f'Завершено!')
+                    if not_found_stickers:
+                        not_text = '\n'.join(not_found_stickers)
+                        QMessageBox.information(self, '=(', f'Не найдены Шк для:\n{not_text}')
+
+                    else:
+                        QMessageBox.information(self, 'Ура!', f'Завершено!')
                     try:
                         path = os.path.join(config_prog.current_dir, 'Заказ')
                         os.startfile(path)

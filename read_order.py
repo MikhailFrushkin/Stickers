@@ -50,9 +50,12 @@ def read_excel_file(file: str):
                 # Пытаемся найти артикул в базе данных
                 article = Article.select().where(Article.art == art_upper).order_by(Article.updated_at_in_site).first()
                 # Если артикул найден, добавляем его в список найденных объектов модели Article
-                found_articles.append(article)
-            except DoesNotExist:
-                not_found_arts.append(art_upper)
+                if article:
+                    found_articles.append(article)
+                else:
+                    not_found_arts.append(art_upper)
+            except Exception as ex:
+                logger.error(ex)
 
     def sort_key(item):
         return item[2]

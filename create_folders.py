@@ -15,6 +15,15 @@ from utils.utils import df_in_xlsx
 
 def create_folder_order(articles, name_doc):
     from main import config_prog
+    def fill_list(lst, target_size):
+        if len(lst) >= target_size:
+            return lst[:target_size]
+        else:
+            repetitions = target_size // len(lst)
+            remainder = target_size % len(lst)
+            filled_lst = lst * repetitions + lst[:remainder]
+            return filled_lst
+
     shutil.rmtree(os.path.join(config_prog.current_dir, 'Заказ'), ignore_errors=True)
     time.sleep(0.5)
     count = 1
@@ -26,17 +35,24 @@ def create_folder_order(articles, name_doc):
 
     for index, article in enumerate(articles, start=1):
         image_paths = article.images.split(';')
-        article_images_count = sum(1 for _ in image_paths)
+
+        len_images = len(image_paths)
+        len_blocks = len_images // 15 + 1
+
+        target_size = 15 * len_blocks
+        filled_list = fill_list(image_paths, target_size)
+        article_images_count = len(filled_list)
+
         if count_images + article_images_count > 240:
             dir_count += 1
             directory = os.path.join(config_prog.current_dir, 'Заказ', f'{os.path.splitext(name_doc)[0]}_{dir_count}')
             os.makedirs(directory, exist_ok=True)
             count_images = 0
 
-        for image_path in image_paths:
+        for image_path in filled_list:
             try:
                 exp = os.path.splitext(os.path.basename(image_path))[1]
-                new_filename = f"{index}_{count}{exp}"
+                new_filename = f"{count}{exp}"
                 destination_path = os.path.join(directory, new_filename)
                 shutil.copy2(image_path, destination_path)
                 count += 1
@@ -93,6 +109,7 @@ def create_order_shk(arts, name_doc):
         logger.debug(f'{name_doc} ШК сохранены!')
     else:
         logger.error(f'{name_doc} ШК не найдены!')
+    return not_found_stickers
 
 
 def create_bad_arts(arts, name_doc, version):

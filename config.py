@@ -48,7 +48,7 @@ class Config:
             self.save_to_file()  # Сохраняем параметры в новый файл
         else:
             # Если файл существует, загружаем параметры из него
-            with open(self.filename, 'r') as f:
+            with open(self.filename, 'r', encoding='utf-8') as f:
                 self.params = json.load(f)
 
     def set_param(self, key, value):

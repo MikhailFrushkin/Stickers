@@ -95,6 +95,7 @@ def main_download_site(category, config, self):
 
     logger.debug(f'Артикулов в базе:{len(art_list)}')
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
+
     data = [item for item in data if item['art'].upper() not in art_list]
     logger.success(f'Артикулов для загрузки:{len(data)}')
 
