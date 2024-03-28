@@ -79,6 +79,7 @@ class Article(Model):
             return
         article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
                              brand=brand, quantity=quantity, sticker=sticker, skin=skin,
+                             updated_at_in_site=updated_at_in_site, one_pdf=one_pdf,
                              images=images, images_in_folder=images_in_folder)
         logger.success(f'В базу добавлен артикул: {art}')
         return article

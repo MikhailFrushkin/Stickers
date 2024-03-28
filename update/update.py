@@ -1,6 +1,7 @@
 import json
 import os
 import shutil
+from pprint import pprint
 
 import requests
 from loguru import logger
@@ -122,6 +123,8 @@ def main_download_site(category, config, self):
                 brand = item['brand']
                 category_prod = item['category']
                 quantity = item['quantity']
+                updated_at_in_site = item['updated_at']
+                one_pdf = None
                 folder = os.path.join(config.params.get('Путь к базе'), brand, category, art)
 
                 if os.path.exists(folder):
@@ -149,7 +152,7 @@ def main_download_site(category, config, self):
                         logger.error(ex)
 
                 try:
-                    Article.create_art(folder, art, quantity, category_prod, brand)
+                    Article.create_art(folder, art, quantity, category_prod, brand, updated_at_in_site, one_pdf)
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:
