@@ -25,6 +25,7 @@ def read_excel_file(file: str):
         for i in df.columns:
             if 'артикул продавца' in i.lower():
                 art_column = i
+                break
         if not art_column:
             logger.error(f'Не найден столбец с артикулом')
             return

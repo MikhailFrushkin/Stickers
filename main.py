@@ -260,7 +260,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if self.arts:
                 try:
                     not_found_stickers = create_order_shk(self.arts, self.name_doc)
-                    pprint(not_found_stickers)
                 except PermissionError as ex:
                     logger.error('Нужно закрыть документ')
                 except Exception as ex:
