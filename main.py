@@ -107,6 +107,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ui.checkBox_10.setChecked(params.get('categories', {}).get("Брелки", False))
         ui.checkBox_9.setChecked(params.get('categories', {}).get("Квадратные наклейки", False))
         ui.checkBox_11.setChecked(params.get('categories', {}).get("Кружки-сердечко", False))
+        ui.checkBox_12.setChecked(params.get('categories', {}).get("Попсокеты ДП", False))
         ui.LineEdit.setText(str(params.get("Частота обновления", 120)))
         ui.LineEdit_2.setText(str(params.get("Путь к базе", "C:\\База")))
         ui.LineEdit_3.setText(str(params.get("Путь к шк", "C:\\База\\ШК")))
@@ -133,6 +134,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             keychains = ui.checkBox_10.isChecked()
             square_stickers = ui.checkBox_9.isChecked()
             heart_mugs = ui.checkBox_11.isChecked()
+            checkBox_12 = ui.checkBox_12.isChecked()
             update_frequency = int(ui.LineEdit.text())
             base_path = os.path.abspath(ui.LineEdit_2.text())
             sh_path = os.path.abspath(ui.LineEdit_3.text())
@@ -143,6 +145,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             config.set_param("Автоматическое обновление", auto_update)
             config.set_param("Значки", icons)
             config.set_param("Попсокеты", popsockets)
+            config.set_param("Попсокеты ДП", checkBox_12)
             config.set_param("Зеркальца", mirrors)
             config.set_param("Постеры", posters)
             config.set_param("Кружки", mugs)
@@ -225,10 +228,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         filename = self.lineEdit.text()
 
         if filename:
-            count_arts, count_images = 0, 0
+            count_arts, count_images, stickers_count, popsocket_count = 0, 0, 0, 0
             if self.found_articles:
                 try:
-                    count_arts, count_images = create_folder_order(self.found_articles, self.name_doc)
+                    count_arts, count_images, stickers_count, popsocket_count = (
+                        create_folder_order(self.found_articles, self.name_doc))
                 except Exception as ex:
                     logger.error(ex)
             else:
@@ -238,11 +242,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Запускаем функцию во втором потоке
                 thread = threading.Thread(target=bad_arts_fix)
                 thread.start()
-            QMessageBox.information(self, 'Ура!', f'Завершено!\nАртикулов: {count_arts}\nСтикеров: {count_images}')
+            QMessageBox.information(self, 'Ура!', f'Завершено!\nАртикулов: {count_arts}\nИзображений: {count_images}')
 
             try:
-                shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон 3d.cdr'),
-                             os.path.join(config_prog.current_dir, 'Заказ'))
+                if stickers_count:
+                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон 3d.cdr'),
+                                 os.path.join(config_prog.current_dir, 'Заказ'))
+                if popsocket_count:
+                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон Попсокет.cdr'),
+                                 os.path.join(config_prog.current_dir, 'Заказ'))
             except Exception as ex:
                 logger.error(ex)
             try:
@@ -296,45 +304,57 @@ class UpdateDatabaseThread(QThread):
     update_progress_message = pyqtSignal(str, int, int)
 
     def run(self):
-        try:
-            self.progress_updated.emit(0, 100)
-            self.update_progress_message.emit('Обновление', 0, 100)
-            category = 'Наклейки 3-D'
-            main_download_site(category=category, config=config_prog, self=self)
-            self.progress_updated.emit(100, 100)
-            self.update_progress_message.emit('Обновление', 100, 100)
-        except Exception as ex:
-            logger.error(ex)
-
-        try:
-            self.progress_updated.emit(0, 100)
-            self.update_progress_message.emit('Поиск шк', 0, 100)
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        check_group = config_prog.params[
+            'categories'
+        ]
+        self.progress_updated.emit(0, 100)
+        self.update_progress_message.emit('Обновление', 0, 100)
+        if check_group['3D наклейки']:
             try:
-                logger.debug('Поиск шк на яндекс диске')
-                main_search_sticker(config_prog)
+                category = 'Наклейки 3-D'
+                main_download_site(category=category, config=config_prog, self=self)
             except Exception as ex:
                 logger.error(ex)
-            self.progress_updated.emit(100, 100)
-            self.update_progress_message.emit('Поиск шк', 100, 100)
-        except Exception as ex:
-            logger.error(ex)
 
-        try:
-            self.progress_updated.emit(0, 100)
-            self.update_progress_message.emit('Поиск шк на CRM', 0, 100)
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
+        if check_group['Попсокеты ДП']:
             try:
-                logger.debug('Поиск шк на диск CRM')
-                main_search_sticker(config_prog, folder_path='/Новая база (1)')
+                category = 'Попсокеты'
+                brand_request = 'Дочке понравилось'
+                main_download_site(category=category, config=config_prog, self=self, brand_request=brand_request)
             except Exception as ex:
                 logger.error(ex)
-            self.progress_updated.emit(100, 100)
-            self.update_progress_message.emit('Поиск шк на CRM', 100, 100)
-        except Exception as ex:
-            logger.error(ex)
+
+        self.progress_updated.emit(100, 100)
+        self.update_progress_message.emit('Обновление', 100, 100)
+        # try:
+        #     self.progress_updated.emit(0, 100)
+        #     self.update_progress_message.emit('Поиск шк', 0, 100)
+        #     loop = asyncio.new_event_loop()
+        #     asyncio.set_event_loop(loop)
+        #     try:
+        #         logger.debug('Поиск шк на яндекс диске')
+        #         main_search_sticker(config_prog)
+        #     except Exception as ex:
+        #         logger.error(ex)
+        #     self.progress_updated.emit(100, 100)
+        #     self.update_progress_message.emit('Поиск шк', 100, 100)
+        # except Exception as ex:
+        #     logger.error(ex)
+        #
+        # try:
+        #     self.progress_updated.emit(0, 100)
+        #     self.update_progress_message.emit('Поиск шк на CRM', 0, 100)
+        #     loop = asyncio.new_event_loop()
+        #     asyncio.set_event_loop(loop)
+        #     try:
+        #         logger.debug('Поиск шк на диск CRM')
+        #         main_search_sticker(config_prog, folder_path='/Новая база (1)')
+        #     except Exception as ex:
+        #         logger.error(ex)
+        #     self.progress_updated.emit(100, 100)
+        #     self.update_progress_message.emit('Поиск шк на CRM', 100, 100)
+        # except Exception as ex:
+        #     logger.error(ex)
 
         if self.parent():
             self.parent().start_update_thread()

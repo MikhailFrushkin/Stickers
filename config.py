@@ -31,6 +31,7 @@ class Config:
                 "categories": {
                     "Значки": False,
                     "Попсокеты": False,
+                    "Попсокеты ДП": False,
                     "Зеркальца": False,
                     "Постеры": False,
                     "Кружки": False,

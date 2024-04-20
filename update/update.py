@@ -5,18 +5,29 @@ from pprint import pprint
 
 import requests
 from loguru import logger
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from config import domain, headers
 from db import Article
 
 
-def get_products(category: str):
-    url = f'{domain}/products/'
+def get_products(category: str, brand_request: str | None):
     try:
-        categories = [category]
-        json_data = json.dumps(categories)
+        if not brand_request:
+            url = f'{domain}/products/'
+            categories = [category]
+            json_data = json.dumps(categories)
+        else:
+            url = f'{domain}/products_v2/'
+            data = {
+                "categories": [category],
+                "brands": [brand_request],
+            }
+            json_data = json.dumps(data)
         response = requests.get(url, data=json_data, headers=headers)
         return response.json().get('data', [])
+
     except Exception as ex:
         logger.error(f'Ошибка в запросе по api {ex}')
         logger.error(response.status_code)
@@ -34,7 +45,7 @@ def get_info_publish_folder(public_url):
                 file_name = file_name.strip().lower()
 
             if os.path.splitext(file_name)[0].isdigit() or 'подл' in file_name or file_name.endswith('.pdf'):
-                result_data.append({'name': i.get('name').strip(), 'file': i.get('file')})
+                result_data.append({'name': i.get('name').strip(), 'file': i.get('file'), 'path': i.get('path')})
 
         for i in result_data:
             if i.get('name').endswith('.pdf'):
@@ -61,15 +72,18 @@ def get_arts_in_base(category):
     return art_list
 
 
-def download_file(destination_path, url):
+def download_file(destination_path, url, path):
     try:
-        response = requests.get(url, stream=True)
+        session = requests.Session()
+        retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+        session.mount('https://', HTTPAdapter(max_retries=retries))
+
+        response = session.get(url, stream=True, timeout=10)
         if response.status_code == 200:
             with open(destination_path, 'wb') as file:
                 for chunk in response.iter_content(chunk_size=1024):
-                    if chunk:  # filter out keep-alive new chunks
+                    if chunk:
                         file.write(chunk)
-            # logger.info(f"File downloaded successfully: {destination_path}")
         else:
             logger.error(f"Error {response.status_code} while downloading file: {url}")
     except requests.RequestException as e:
@@ -83,7 +97,7 @@ def copy_image(image_path, count):
         shutil.copy2(image_path, os.path.join(folder_art, f'{i + 2}.{exp}'))
 
 
-def main_download_site(category, config, self):
+def main_download_site(category, config, self, brand_request=None):
     def chunk_list(lst, chunk_size):
         for i in range(0, len(lst), chunk_size):
             yield lst[i:i + chunk_size]
@@ -91,7 +105,7 @@ def main_download_site(category, config, self):
     chunk_size = 20
 
     art_list = get_arts_in_base(category)
-    data = get_products(category)
+    data = get_products(category, brand_request)
 
     logger.debug(f'Артикулов в базе:{len(art_list)}')
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
@@ -136,7 +150,7 @@ def main_download_site(category, config, self):
 
                 for i in item['url_data']:
                     destination_path = os.path.join(folder, i['name'])
-                    download_file(destination_path, i['file'])
+                    download_file(destination_path, i['file'], i['path'])
 
                 if item['the_same']:
                     try:
