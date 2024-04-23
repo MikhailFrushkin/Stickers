@@ -82,7 +82,8 @@ def create_folder_order(articles, name_doc):
     if anikoya_3d_stickers:
         all_images_count += copy_files_folder(anikoya_3d_stickers, 'AniKoya', 'Наклейки 3-D')
     if dochke_popsockets:
-        all_images_count += copy_files_folder(dochke_popsockets, 'Дочке понравилось', 'Попсокеты')
+        all_images_count += copy_files_folder(dochke_popsockets, 'Дочке понравилось', 'Попсокеты',
+                                              max_folder=525)
 
     logger.success('Завершено копирование файлов')
     return len(articles), all_images_count, len(anikoya_3d_stickers), len(dochke_popsockets)

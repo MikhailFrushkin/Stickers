@@ -41,16 +41,25 @@ async def main_search(folder_path):
         await traverse_yandex_disk(session, folder_path)
 
 
-async def download_file(session, url, filename, semaphore):
-    async with semaphore:
-        async with session.get(url) as response:
-            async with aiofiles.open(filename, 'wb') as f:
-                while True:
-                    chunk = await response.content.read(1024)
-                    if not chunk:
-                        break
-                    await f.write(chunk)
-        logger.info(f'Файл {filename} загружен')
+async def download_file(session, url, filename, semaphore, retry_count=3, retry_delay=10):
+    for _ in range(retry_count):
+        try:
+            async with semaphore:
+                async with session.get(url) as response:
+                    async with aiofiles.open(filename, 'wb') as f:
+                        while True:
+                            chunk = await response.content.read(1024)
+                            if not chunk:
+                                break
+                            await f.write(chunk)
+                logger.info(f'Файл {filename} загружен')
+                return  # Если загрузка успешна, выходим из цикла
+        except Exception as ex:
+            # logger.error(f'Ошибка при скачивании файла {filename}: {ex}')
+            # logger.warning(f'Повторная попытка через {retry_delay} сек...')
+            await asyncio.sleep(retry_delay)
+
+    # logger.error(f'Не удалось скачать файл {filename} после нескольких попыток')
 
 
 async def download_files(result_dict, directory_path):

@@ -251,6 +251,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 if popsocket_count:
                     shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон Попсокет.cdr'),
                                  os.path.join(config_prog.current_dir, 'Заказ'))
+                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон Попсокет А4.cdr'),
+                                 os.path.join(config_prog.current_dir, 'Заказ'))
             except Exception as ex:
                 logger.error(ex)
             try:
@@ -341,20 +343,20 @@ class UpdateDatabaseThread(QThread):
         # except Exception as ex:
         #     logger.error(ex)
         #
-        # try:
-        #     self.progress_updated.emit(0, 100)
-        #     self.update_progress_message.emit('Поиск шк на CRM', 0, 100)
-        #     loop = asyncio.new_event_loop()
-        #     asyncio.set_event_loop(loop)
-        #     try:
-        #         logger.debug('Поиск шк на диск CRM')
-        #         main_search_sticker(config_prog, folder_path='/Новая база (1)')
-        #     except Exception as ex:
-        #         logger.error(ex)
-        #     self.progress_updated.emit(100, 100)
-        #     self.update_progress_message.emit('Поиск шк на CRM', 100, 100)
-        # except Exception as ex:
-        #     logger.error(ex)
+        try:
+            self.progress_updated.emit(0, 100)
+            self.update_progress_message.emit('Поиск шк на CRM', 0, 100)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                logger.debug('Поиск шк на диск CRM')
+                main_search_sticker(config_prog, folder_path='/Новая база (1)')
+            except Exception as ex:
+                logger.error(ex)
+            self.progress_updated.emit(100, 100)
+            self.update_progress_message.emit('Поиск шк на CRM', 100, 100)
+        except Exception as ex:
+            logger.error(ex)
 
         if self.parent():
             self.parent().start_update_thread()

@@ -75,10 +75,10 @@ def get_arts_in_base(category):
 def download_file(destination_path, url, path):
     try:
         session = requests.Session()
-        retries = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+        retries = Retry(total=2, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
         session.mount('https://', HTTPAdapter(max_retries=retries))
 
-        response = session.get(url, stream=True, timeout=10)
+        response = session.get(url, stream=True, timeout=15)
         if response.status_code == 200:
             with open(destination_path, 'wb') as file:
                 for chunk in response.iter_content(chunk_size=1024):
@@ -138,7 +138,8 @@ def main_download_site(category, config, self, brand_request=None):
                 brand = item['brand']
                 category_prod = item['category']
                 quantity = item['quantity']
-                updated_at_in_site = item['updated_at']
+                # updated_at_in_site = item['updated_at']
+                updated_at_in_site = None
                 one_pdf = None
                 folder = os.path.join(config.params.get('Путь к базе'), brand, category, art)
 
