@@ -6,6 +6,7 @@ from loguru import logger
 headers = {'Content-Type': 'application/json'}
 # domain = 'http://127.0.0.1:8000/api_rest'
 domain = 'https://mycego.online/api_rest'
+base_folder = 'Новая база (1)'
 
 
 class Config:
@@ -81,3 +82,5 @@ if __name__ == '__main__':
     # Выводим обновленные параметры
     print("\nОбновленные параметры конфигурации:")
     print(config.params)
+
+config_prog = Config()

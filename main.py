@@ -12,7 +12,7 @@ from loguru import logger
 
 from Gui.main_window import Ui_MainWindow
 from Gui.settings import Ui_Form
-from config import Config
+from config import config_prog
 from create_folders import create_folder_order, create_order_shk, create_bad_arts, upload_file
 from db import db, Article, Orders, NotFoundArt
 from read_order import read_excel_file
@@ -20,7 +20,6 @@ from update.search_stickers import main_search_sticker
 from update.upadate_db import update_db_in_folder
 from update.update import main_download_site
 
-config_prog = Config()
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):

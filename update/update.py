@@ -8,7 +8,7 @@ from loguru import logger
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
 
-from config import domain, headers
+from config import domain, headers, base_folder, config_prog
 from db import Article
 
 
@@ -36,9 +36,11 @@ def get_products(category: str, brand_request: str | None):
 def get_info_publish_folder(public_url):
     result_data = []
     res = requests.get(
-        f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&fields=_embedded&limit=1000')
+        f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&limit=1000')
     if res.status_code == 200:
-        data = res.json().get('_embedded', {}).get('items', [])
+        data = res.json()
+        folder_name = data.get('name')
+        data = data.get('_embedded', {}).get('items', [])
         for i in data:
             file_name = i.get('name', None)
             if file_name:
@@ -53,14 +55,15 @@ def get_info_publish_folder(public_url):
         else:
             logger.error(f'Нет шк {public_url}')
             return
-        return result_data
+        return result_data, folder_name
 
 
 def create_download_data(item):
     try:
-        url_data = get_info_publish_folder(item['directory_url'])
+        url_data, folder_name = get_info_publish_folder(item['directory_url'])
         if url_data:
             item['url_data'] = url_data
+            item['folder_name'] = folder_name
             return item
     except Exception as ex:
         logger.error(ex)
@@ -72,13 +75,23 @@ def get_arts_in_base(category):
     return art_list
 
 
-def download_file(destination_path, url, path):
-    try:
-        session = requests.Session()
-        retries = Retry(total=2, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
-        session.mount('https://', HTTPAdapter(max_retries=retries))
+def get_download_url(path_file):
+    headers_yandex = {'Authorization': f'OAuth {config_prog.params.get("token")}'}
 
-        response = session.get(url, stream=True, timeout=15)
+    url = f'https://cloud-api.yandex.net/v1/disk/resources/download?path={path_file}'
+    response = requests.get(url, headers=headers_yandex)
+    logger.warning(response.status_code)
+    logger.warning(response.text)
+    if response.status_code == 200:
+        return response.json().get('href')
+
+
+def download_file(destination_path, url, path_file):
+    session = requests.Session()
+    retries = Retry(total=2, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+    session.mount('https://', HTTPAdapter(max_retries=retries))
+    try:
+        response = session.get(url, stream=True, timeout=5)
         if response.status_code == 200:
             with open(destination_path, 'wb') as file:
                 for chunk in response.iter_content(chunk_size=1024):
@@ -88,6 +101,16 @@ def download_file(destination_path, url, path):
             logger.error(f"Error {response.status_code} while downloading file: {url}")
     except requests.RequestException as e:
         logger.error(f"Error during downloading file: {e}")
+        try:
+            url = get_download_url(path_file)
+            response = session.get(url, stream=True, timeout=5)
+            if response.status_code == 200:
+                with open(destination_path, 'wb') as file:
+                    for chunk in response.iter_content(chunk_size=1024):
+                        if chunk:
+                            file.write(chunk)
+        except Exception as ex:
+            logger.error(ex)
 
 
 def copy_image(image_path, count):
@@ -138,6 +161,8 @@ def main_download_site(category, config, self, brand_request=None):
                 brand = item['brand']
                 category_prod = item['category']
                 quantity = item['quantity']
+                folder_name = item['folder_name']
+
                 # updated_at_in_site = item['updated_at']
                 updated_at_in_site = None
                 one_pdf = None
@@ -151,7 +176,9 @@ def main_download_site(category, config, self, brand_request=None):
 
                 for i in item['url_data']:
                     destination_path = os.path.join(folder, i['name'])
-                    download_file(destination_path, i['file'], i['path'])
+                    print(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
+
+                    download_file(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
 
                 if item['the_same']:
                     try:
@@ -176,3 +203,7 @@ def main_download_site(category, config, self, brand_request=None):
             count_download += 1
             self.progress_updated.emit(count_download, all_arts)
             self.update_progress_message.emit('Обновление', count_download, all_arts)
+
+
+if __name__ == '__main__':
+    get_download_url(f'{base_folder}/Брелки/10954_2_25_1/1.png')
