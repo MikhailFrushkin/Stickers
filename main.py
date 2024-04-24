@@ -26,7 +26,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 1
+        self.version = 2
         self.name_doc = ''
         self.current_dir = Path.cwd()
         self.found_articles = []

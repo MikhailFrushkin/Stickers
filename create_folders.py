@@ -37,10 +37,9 @@ def create_folder_order(articles, name_doc):
         for index, article in enumerate(arts, start=1):
             image_paths = article.images.split(';')
             len_images = len(image_paths)
-            if brand == 'AniKoya' and category == 'Наклейки 3-D' and article.quantity == 2:
-                # len_blocks = len_images // 15 + 1
-                # target_size = 15 * len_blocks
-                target_size = 6
+            if brand == 'AniKoya' and category == 'Наклейки 3-D':
+                len_blocks = len_images // 15 + 1
+                target_size = 15 * len_blocks
             else:
                 target_size = article.quantity
             filled_list = fill_list(image_paths, target_size)
