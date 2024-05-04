@@ -54,9 +54,8 @@ class Article(Model):
         else:
             existing_article = cls.get_or_none(art=art, category=category, brand=brand,
                                                updated_at_in_site=updated_at_in_site, one_pdf=one_pdf)
-            if existing_article:
-                return existing_article
-
+        if existing_article:
+            return existing_article
         folder_name = os.path.abspath(folder)
         image_filenames = []
 
@@ -67,7 +66,6 @@ class Article(Model):
                     sticker = file_path
                     if not os.path.exists(os.path.join(config_prog.params.get('Путь к шк'), filename)):
                         shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
-                        # logger.success(f'Скопирован шк {filename}')
                 elif filename.strip()[0].isdigit():
                     image_filenames.append(file_path)
                 elif 'подложка' in filename.lower():
@@ -82,6 +80,7 @@ class Article(Model):
                              updated_at_in_site=updated_at_in_site, one_pdf=one_pdf,
                              images=images, images_in_folder=images_in_folder)
         logger.success(f'В базу добавлен артикул: {art}')
+
         return article
 
     @classmethod

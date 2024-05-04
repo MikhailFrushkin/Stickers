@@ -390,7 +390,7 @@ class Ui_Form(object):
         self.checkBox_11.setText(_translate("Form", "Кружки-сердечко", "0"))
         self.checkBox_8.setText(_translate("Form", "3D наклейки", "0"))
         self.checkBox_7.setText(_translate("Form", "Наклейки на карту", "0"))
-        self.checkBox_9.setText(_translate("Form", "Квадратные наклейки", "0"))
+        self.checkBox_9.setText(_translate("Form", "Наклейки квадратные", "0"))
         self.checkBox_10.setText(_translate("Form", "Брелки", "0"))
         self.checkBox_12.setText(_translate("Form", "Попсокеты ДП", "0"))
         self.Label_2.setText(_translate("Form", "Частота обновления (мин.)"))

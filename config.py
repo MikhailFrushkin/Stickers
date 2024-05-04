@@ -39,7 +39,7 @@ class Config:
                     "3D наклейки": True,
                     "Наклейки на карту": False,
                     "Брелки": False,
-                    "Квадратные наклейки": False,
+                    "Наклейки квадратные": False,
                     "Кружки-сердечко": False
                 },
                 "Частота обновления": 120,
@@ -66,21 +66,9 @@ class Config:
                 logger.error(f'Параметр "{key}" не найден.')
         self.save_to_file()
 
+    def reload_settings(self):
+        # Перезагружаем настройки из файла
+        self.load_from_file()
 
-if __name__ == '__main__':
-    # Создаем объект класса Config
-    config = Config()
-
-    # Выводим текущие параметры
-    print("Текущие параметры конфигурации:")
-    print(config.params)
-
-    # Пример изменения параметра и сохранение его в файл
-    config.set_param("Автоматическое обновление", True)
-    config.set_param("Частота обновления", 60)
-
-    # Выводим обновленные параметры
-    print("\nОбновленные параметры конфигурации:")
-    print(config.params)
 
 config_prog = Config()

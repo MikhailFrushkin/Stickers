@@ -12,14 +12,13 @@ from loguru import logger
 
 from Gui.main_window import Ui_MainWindow
 from Gui.settings import Ui_Form
-from config import config_prog
+from config import config_prog, Config
 from create_folders import create_folder_order, create_order_shk, create_bad_arts, upload_file
 from db import db, Article, Orders, NotFoundArt
 from read_order import read_excel_file
 from update.search_stickers import main_search_sticker
 from update.upadate_db import update_db_in_folder
 from update.update import main_download_site
-
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -104,7 +103,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         ui.checkBox_8.setChecked(params.get('categories', {}).get("3D наклейки", False))
         ui.checkBox_7.setChecked(params.get('categories', {}).get("Наклейки на карту", False))
         ui.checkBox_10.setChecked(params.get('categories', {}).get("Брелки", False))
-        ui.checkBox_9.setChecked(params.get('categories', {}).get("Квадратные наклейки", False))
+        ui.checkBox_9.setChecked(params.get('categories', {}).get("Наклейки квадратные", False))
         ui.checkBox_11.setChecked(params.get('categories', {}).get("Кружки-сердечко", False))
         ui.checkBox_12.setChecked(params.get('categories', {}).get("Попсокеты ДП", False))
         ui.LineEdit.setText(str(params.get("Частота обновления", 120)))
@@ -140,24 +139,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             token = ui.LineEdit_4.text()
 
             # Сохраняем настройки в конфигурационный файл
-            config = Config()
-            config.set_param("Автоматическое обновление", auto_update)
-            config.set_param("Значки", icons)
-            config.set_param("Попсокеты", popsockets)
-            config.set_param("Попсокеты ДП", checkBox_12)
-            config.set_param("Зеркальца", mirrors)
-            config.set_param("Постеры", posters)
-            config.set_param("Кружки", mugs)
-            config.set_param("3D наклейки", stickers_3d)
-            config.set_param("Наклейки на карту", map_stickers)
-            config.set_param("Брелки", keychains)
-            config.set_param("Квадратные наклейки", square_stickers)
-            config.set_param("Кружки-сердечко", heart_mugs)
-            config.set_param("Частота обновления", update_frequency)
-            config.set_param("Путь к базе", base_path)
-            config.set_param("Путь к шк", sh_path)
-            config.set_param("token", token)
+            config_prog.set_param("Автоматическое обновление", auto_update)
+            config_prog.set_param("Значки", icons)
+            config_prog.set_param("Попсокеты", popsockets)
+            config_prog.set_param("Попсокеты ДП", checkBox_12)
+            config_prog.set_param("Зеркальца", mirrors)
+            config_prog.set_param("Постеры", posters)
+            config_prog.set_param("Кружки", mugs)
+            config_prog.set_param("3D наклейки", stickers_3d)
+            config_prog.set_param("Наклейки на карту", map_stickers)
+            config_prog.set_param("Брелки", keychains)
+            config_prog.set_param("Наклейки квадратные", square_stickers)
+            config_prog.set_param("Кружки-сердечко", heart_mugs)
+            config_prog.set_param("Частота обновления", update_frequency)
+            config_prog.set_param("Путь к базе", base_path)
+            config_prog.set_param("Путь к шк", sh_path)
+            config_prog.set_param("token", token)
             self.dialog.accept()
+            config_prog.reload_settings()
         except Exception as ex:
             logger.error(ex)
 
@@ -310,23 +309,28 @@ class UpdateDatabaseThread(QThread):
         ]
         self.progress_updated.emit(0, 100)
         self.update_progress_message.emit('Обновление', 0, 100)
-        if check_group['3D наклейки']:
-            try:
-                category = 'Наклейки 3-D'
-                main_download_site(category=category, config=config_prog, self=self)
-            except Exception as ex:
-                logger.error(ex)
 
+        categories_list = []
+        if check_group['3D наклейки']:
+            categories_list.append(('Наклейки 3-D', None))
+        if check_group['Наклейки квадратные']:
+            categories_list.append(('Наклейки квадратные', None))
+        if check_group['Наклейки на карту']:
+            categories_list.append(('Наклейки на карту', None))
         if check_group['Попсокеты ДП']:
-            try:
-                category = 'Попсокеты'
-                brand_request = 'Дочке понравилось'
-                main_download_site(category=category, config=config_prog, self=self, brand_request=brand_request)
-            except Exception as ex:
-                logger.error(ex)
+            categories_list.append(('Попсокеты', 'Дочке понравилось'))
+
+        if categories_list:
+            for item in categories_list:
+                try:
+                    main_download_site(category=item[0], config=config_prog, self=self, brand_request=item[1])
+                except Exception as ex:
+                    logger.error(ex)
 
         self.progress_updated.emit(100, 100)
         self.update_progress_message.emit('Обновление', 100, 100)
+
+        #Обновление шк
         # try:
         #     self.progress_updated.emit(0, 100)
         #     self.update_progress_message.emit('Поиск шк', 0, 100)

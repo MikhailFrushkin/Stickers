@@ -168,17 +168,23 @@ def main_download_site(category, config, self, brand_request=None):
                 one_pdf = None
                 folder = os.path.join(config.params.get('Путь к базе'), brand, category, art)
 
-                if os.path.exists(folder):
-                    logger.warning(f'Папка существует {art}, удалена!')
-                    shutil.rmtree(folder, ignore_errors=True)
+                try:
+                    if os.path.exists(folder):
+                        logger.warning(f'Папка существует {art}, удалена!')
+                        shutil.rmtree(folder, ignore_errors=True)
 
-                os.makedirs(folder, exist_ok=True)
+                    os.makedirs(folder, exist_ok=True)
+                except Exception as ex:
+                    logger.error(ex)
 
                 for i in item['url_data']:
-                    destination_path = os.path.join(folder, i['name'])
-                    print(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
+                    try:
+                        destination_path = os.path.join(folder, i['name'])
+                        # print(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
 
-                    download_file(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
+                        download_file(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
+                    except Exception as ex:
+                        logger.error(ex)
 
                 if item['the_same']:
                     try:
@@ -195,6 +201,7 @@ def main_download_site(category, config, self, brand_request=None):
                         logger.error(ex)
 
                 try:
+                    print(folder, art, quantity, category_prod, brand, updated_at_in_site, one_pdf)
                     Article.create_art(folder, art, quantity, category_prod, brand, updated_at_in_site, one_pdf)
                 except Exception as ex:
                     logger.error(ex)
