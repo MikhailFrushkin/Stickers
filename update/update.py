@@ -162,10 +162,9 @@ def main_download_site(category, config, self, brand_request=None):
                 category_prod = item['category']
                 quantity = item['quantity']
                 folder_name = item['folder_name']
+                size = item['size']
 
-                # updated_at_in_site = item['updated_at']
-                updated_at_in_site = None
-                one_pdf = None
+                updated_at_in_site = item['updated_at']
                 folder = os.path.join(config.params.get('Путь к базе'), brand, category, art)
 
                 try:
@@ -180,8 +179,6 @@ def main_download_site(category, config, self, brand_request=None):
                 for i in item['url_data']:
                     try:
                         destination_path = os.path.join(folder, i['name'])
-                        # print(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
-
                         download_file(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
                     except Exception as ex:
                         logger.error(ex)
@@ -201,7 +198,7 @@ def main_download_site(category, config, self, brand_request=None):
                         logger.error(ex)
 
                 try:
-                    Article.create_art(folder, art, quantity, category_prod, brand, updated_at_in_site, one_pdf)
+                    Article.create_art(folder, art, quantity, size, category_prod, brand, updated_at_in_site)
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:

@@ -19,12 +19,14 @@ class Article(Model):
 
     brand = CharField(verbose_name='Бренд', default='AniKoya')
     category = CharField(verbose_name='Категория')
+    size = CharField(verbose_name='Размер', null=True)
 
     skin = CharField(verbose_name='Путь к подложке', null=True)
     images = TextField(verbose_name='Пути в файлам')
     sticker = CharField(verbose_name='Путь к Шк', null=True)
 
     one_pdf = CharField(verbose_name='Путь к объединенному пдф', null=True)
+    blur_images = TextField(verbose_name='Пути в файлам c блюром', null=True)
 
     created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
     updated_at_in_site = DateTimeField(verbose_name='Время обновления на сайте', null=True)
@@ -40,22 +42,17 @@ class Article(Model):
         return self.art
 
     @classmethod
-    def create_art(cls, folder, art, quantity, category, brand, updated_at_in_site, one_pdf=None):
+    def create_art(cls, folder, art, quantity, size, category, brand, updated_at_in_site):
         from main import config_prog
 
         sticker = None
         skin = None
 
         art = remove_russian_letters(art).upper()
-        existing_article = cls.get_or_none(art=art, category=category, brand=brand,
-                                           updated_at_in_site=None, one_pdf=one_pdf)
+        existing_article = cls.get_or_none(art=art, category=category, brand=brand)
         if existing_article:
             return existing_article
-        else:
-            existing_article = cls.get_or_none(art=art, category=category, brand=brand,
-                                               updated_at_in_site=updated_at_in_site, one_pdf=one_pdf)
-        if existing_article:
-            return existing_article
+
         folder_name = os.path.abspath(folder)
         image_filenames = []
 
@@ -72,13 +69,18 @@ class Article(Model):
                     skin = file_path
         images = ';'.join(image_filenames)
         images_in_folder = len(image_filenames)
+        size = size
         if len(image_filenames) != quantity:
             logger.error(f'не совпадает кол-во: {art}')
             return
+
+        one_pdf = None
+        blur_images = None
+
         article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
-                             brand=brand, quantity=quantity, sticker=sticker, skin=skin,
+                             brand=brand, quantity=quantity, size=size,  sticker=sticker, skin=skin,
                              updated_at_in_site=updated_at_in_site, one_pdf=one_pdf,
-                             images=images, images_in_folder=images_in_folder)
+                             images=images, images_in_folder=images_in_folder, blur_images=blur_images)
         logger.success(f'В базу добавлен артикул: {art}')
 
         return article
@@ -111,12 +113,27 @@ class Article(Model):
         return False
 
 
+class NotFoundArt(Model):
+    art = CharField(verbose_name='Артикул')
+    doc_name = CharField(verbose_name='Имя файла')
+    type = CharField(verbose_name='Тип', null=True)
+    shop = CharField(verbose_name='Магазин', null=True)
+    created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
+
+    class Meta:
+        database = db
+
+    def __str__(self):
+        return self.art
+
+
 class Orders(Model):
     name = CharField(verbose_name='Имя заказа', index=True)
-    found_arts = IntegerField(verbose_name='Найденно артикулов')
-    not_found_arts = IntegerField(verbose_name='Не найденные артикула')
-    type = CharField(verbose_name='Тип')
-    shop = CharField(verbose_name='Магазин', default='AniKoya')
+    category = CharField(verbose_name='Категория')
+    found_arts_count = IntegerField(verbose_name='Найденно артикулов')
+    found_arts = ManyToManyField(Article, backref='found_arts')
+    not_found_arts_count = IntegerField(verbose_name='Не найденные артикула')
+    not_found_arts = ManyToManyField(NotFoundArt, backref='not_found_arts')
     created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
 
     class Meta:
@@ -126,14 +143,3 @@ class Orders(Model):
         return self.name
 
 
-class NotFoundArt(Model):
-    art = CharField(verbose_name='Артикул', index=True)
-    type = CharField(verbose_name='Тип')
-    shop = CharField(verbose_name='Магазин', default='AniKoya')
-    created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
-
-    class Meta:
-        database = db
-
-    def __str__(self):
-        return self.art

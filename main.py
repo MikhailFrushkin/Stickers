@@ -245,9 +245,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             for cat, value in categories_dict.items():
                 if value['arts']:
                     mess += f'\n{cat}: {len(value["arts"])}'
-                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
-                                 os.path.join(config_prog.current_dir, 'Заказ'))
-
+                    try:
+                        shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
+                                     os.path.join(config_prog.current_dir, 'Заказ'))
+                    except Exception as ex:
+                        logger.error(ex)
+                        QMessageBox.warning(self, 'Ошибка!', 'Возможно файл открыт')
             QMessageBox.information(self, 'Завершено!', mess)
 
             try:
