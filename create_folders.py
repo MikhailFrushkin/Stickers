@@ -12,6 +12,7 @@ from loguru import logger
 from peewee import fn
 
 from utils.utils import df_in_xlsx
+from pprint import pprint
 
 
 def create_folder_order(articles, name_doc):
@@ -26,29 +27,30 @@ def create_folder_order(articles, name_doc):
             filled_lst = lst * repetitions + lst[:remainder]
             return filled_lst
 
-    def copy_files_folder(arts, brand, category, max_folder=240, target_size=1):
+    def copy_files_folder(arts, max_folder, target_size, category):
         count = 1
         dir_count = 1
         count_images = 0
         all_count_images = 0
         directory = os.path.join(config_prog.current_dir, 'Заказ', f'{os.path.splitext(name_doc)[0]}'
-                                                                   f'_{brand}_{category}_{dir_count}')
+                                                                   f'_{category}_{dir_count}')
         os.makedirs(directory, exist_ok=True)
         for index, article in enumerate(arts, start=1):
             image_paths = article.images.split(';')
             len_images = len(image_paths)
-            if brand == 'AniKoya' and category == 'Наклейки 3-D':
+            if not target_size:
                 len_blocks = len_images // 15 + 1
                 target_size = 15 * len_blocks
             else:
                 target_size = article.quantity
+
             filled_list = fill_list(image_paths, target_size)
             article_images_count = len(filled_list)
 
             if count_images + article_images_count > max_folder:
                 dir_count += 1
                 directory = os.path.join(config_prog.current_dir, 'Заказ', f'{os.path.splitext(name_doc)[0]}'
-                                                                           f'_{brand}_{category}_{dir_count}')
+                                                                           f'_{category}_{dir_count}')
                 os.makedirs(directory, exist_ok=True)
                 count_images = 0
 
@@ -68,27 +70,59 @@ def create_folder_order(articles, name_doc):
 
     shutil.rmtree(os.path.join(config_prog.current_dir, 'Заказ'), ignore_errors=True)
 
-    anikoya_3d_stickers = []
-    dochke_popsockets = []
-    other_articles = []
+    categories_dict = {
+        'Наклейки 3-D': {
+            'arts': [],
+            'max_folder': 240,
+            'target_size': None
+        },
+        'Попсокеты ДП': {
+            'arts': [],
+            'max_folder': 525,
+            'target_size': 1
+
+        },
+        'Наклейки квадратные': {
+            'arts': [],
+            'max_folder': 64,
+            'target_size': 1
+
+        },
+        'Наклейки на карту': {
+            'arts': [],
+            'max_folder': 9,
+            'target_size': 1
+
+        },
+        'other_articles': {
+            'arts': [],
+            'max_folder': 1000,
+            'target_size': 1
+
+        },
+    }
 
     for article in articles:
-        if article.brand == 'AniKoya' and article.category == 'Наклейки 3-D':
-            anikoya_3d_stickers.append(article)
+        if article.category == 'Наклейки 3-D':
+            categories_dict['Наклейки 3-D']['arts'].append(article)
         elif article.brand == 'Дочке понравилось' and article.category == 'Попсокеты':
-            dochke_popsockets.append(article)
+            categories_dict['Попсокеты ДП']['arts'].append(article)
+        elif article.category == 'Наклейки квадратные':
+            categories_dict['Наклейки квадратные']['arts'].append(article)
+        elif article.category == 'Наклейки на карту':
+            categories_dict['Наклейки на карту']['arts'].append(article)
         else:
-            other_articles.append(article)
-
+            categories_dict['other_articles'].append(article)
     all_images_count = 0
-    if anikoya_3d_stickers:
-        all_images_count += copy_files_folder(anikoya_3d_stickers, 'AniKoya', 'Наклейки 3-D')
-    if dochke_popsockets:
-        all_images_count += copy_files_folder(dochke_popsockets, 'Дочке понравилось', 'Попсокеты',
-                                              max_folder=525)
 
+    for cat, value in categories_dict.items():
+        if value['arts']:
+            all_images_count += copy_files_folder(arts=value['arts'],
+                                                  max_folder=value['max_folder'],
+                                                  target_size=value['target_size'],
+                                                  category=cat)
     logger.success('Завершено копирование файлов')
-    return len(articles), all_images_count, len(anikoya_3d_stickers), len(dochke_popsockets)
+    return all_images_count, categories_dict
 
 
 def find_files_in_directory(directory, file_list):
@@ -159,7 +193,6 @@ def upload_file(loadfile, replace=False):
         "overwrite": replace
     }
     resp = requests.get(upload_url, headers=headers, params=params)
-    logger.debug(resp.status_code)
 
     res = resp.json()
     if resp.status_code == 409:

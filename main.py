@@ -2,7 +2,6 @@ import asyncio
 import shutil
 import threading
 from pathlib import Path
-from pprint import pprint
 
 import qdarkstyle
 from PyQt6 import QtCore, QtGui, QtWidgets
@@ -224,12 +223,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 logger.error(ex)
 
         filename = self.lineEdit.text()
+        categories_dict = {}
 
         if filename:
             count_arts, count_images, stickers_count, popsocket_count = 0, 0, 0, 0
             if self.found_articles:
                 try:
-                    count_arts, count_images, stickers_count, popsocket_count = (
+                    count_images, categories_dict = (
                         create_folder_order(self.found_articles, self.name_doc))
                 except Exception as ex:
                     logger.error(ex)
@@ -240,19 +240,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Запускаем функцию во втором потоке
                 thread = threading.Thread(target=bad_arts_fix)
                 thread.start()
-            QMessageBox.information(self, 'Ура!', f'Завершено!\nАртикулов: {count_arts}\nИзображений: {count_images}')
 
-            try:
-                if stickers_count:
-                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон 3d.cdr'),
+            mess = f'\nАртикулов: {len(self.found_articles)}\nИзображений: {count_images}\n'
+            for cat, value in categories_dict.items():
+                if value['arts']:
+                    mess += f'\n{cat}: {len(value["arts"])}'
+                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
                                  os.path.join(config_prog.current_dir, 'Заказ'))
-                if popsocket_count:
-                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон Попсокет.cdr'),
-                                 os.path.join(config_prog.current_dir, 'Заказ'))
-                    shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', 'Шаблон Попсокет А4.cdr'),
-                                 os.path.join(config_prog.current_dir, 'Заказ'))
-            except Exception as ex:
-                logger.error(ex)
+
+            QMessageBox.information(self, 'Завершено!', mess)
+
             try:
                 path = os.path.join(config_prog.current_dir, 'Заказ')
                 os.startfile(path)
@@ -330,7 +327,7 @@ class UpdateDatabaseThread(QThread):
         self.progress_updated.emit(100, 100)
         self.update_progress_message.emit('Обновление', 100, 100)
 
-        #Обновление шк
+        # Обновление шк
         # try:
         #     self.progress_updated.emit(0, 100)
         #     self.update_progress_message.emit('Поиск шк', 0, 100)

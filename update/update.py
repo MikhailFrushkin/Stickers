@@ -201,7 +201,6 @@ def main_download_site(category, config, self, brand_request=None):
                         logger.error(ex)
 
                 try:
-                    print(folder, art, quantity, category_prod, brand, updated_at_in_site, one_pdf)
                     Article.create_art(folder, art, quantity, category_prod, brand, updated_at_in_site, one_pdf)
                 except Exception as ex:
                     logger.error(ex)
