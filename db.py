@@ -44,7 +44,8 @@ class Article(Model):
     @classmethod
     def create_art(cls, folder, art, quantity, size, category, brand, updated_at_in_site):
         from main import config_prog
-
+        one_pdf = None
+        blur_images = None
         sticker = None
         skin = None
 
@@ -55,27 +56,32 @@ class Article(Model):
 
         folder_name = os.path.abspath(folder)
         image_filenames = []
+        image_blur_filenames = []
 
         for index, filename in enumerate(os.listdir(folder_name), start=1):
             file_path = os.path.join(folder_name, filename)
             if os.path.isfile(file_path):
+                filename = filename.strip().lower()
                 if filename.endswith('.pdf'):
                     sticker = file_path
                     if not os.path.exists(os.path.join(config_prog.params.get('Путь к шк'), filename)):
                         shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
-                elif filename.strip()[0].isdigit():
+                elif 'blur' in filename:
+                    image_blur_filenames.append(file_path)
+                elif os.path.splitext(filename)[0].isdigit():
                     image_filenames.append(file_path)
-                elif 'подложка' in filename.lower():
+                elif 'подложка' in filename:
                     skin = file_path
         images = ';'.join(image_filenames)
+
+        if image_blur_filenames:
+            blur_images = ';'.join(image_blur_filenames)
+
         images_in_folder = len(image_filenames)
         size = size
         if len(image_filenames) != quantity:
             logger.error(f'не совпадает кол-во: {art}')
             return
-
-        one_pdf = None
-        blur_images = None
 
         article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
                              brand=brand, quantity=quantity, size=size,  sticker=sticker, skin=skin,

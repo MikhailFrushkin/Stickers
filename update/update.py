@@ -10,6 +10,7 @@ from urllib3 import Retry
 
 from config import domain, headers, base_folder, config_prog
 from db import Article
+from utils.blur import blur_image
 
 
 def get_products(category: str, brand_request: str | None):
@@ -196,7 +197,14 @@ def main_download_site(category, config, self, brand_request=None):
                                 raise ValueError(f'Нет файла для копирования артикул: {item}')
                     except Exception as ex:
                         logger.error(ex)
-
+                if category == 'Брелки':
+                    for file in os.listdir(folder):
+                        file_name, exp = os.path.splitext(file)
+                        if file_name.isdigit():
+                            image_path = os.path.join(folder, file)
+                            size_blur = size
+                            output_path = os.path.join(folder, f'blur_{file}')
+                            blur_image(image_path, output_path, size_blur)
                 try:
                     Article.create_art(folder, art, quantity, size, category_prod, brand, updated_at_in_site)
                 except Exception as ex:

@@ -65,7 +65,10 @@ def create_folder_order(articles, name_doc):
             elif target_size == 1:
                 filled_list = image_paths
             elif target_size == 2:
-                filled_list = image_paths * 2
+                if article.quantity == 1:
+                    filled_list = image_paths * 2
+                else:
+                    filled_list = image_paths
             else:
                 target_size_block = article.quantity
                 filled_list = fill_list(image_paths, target_size_block)

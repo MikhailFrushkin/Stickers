@@ -8,6 +8,12 @@ headers = {'Content-Type': 'application/json'}
 domain = 'https://mycego.online/api_rest'
 base_folder = 'Новая база (1)'
 
+data_blur = {
+        '25': 1.40,
+        '37': 1.30,
+        '44': 1.18,
+        '56': 1.14,
+    }
 
 class Config:
     def __init__(self, filename='config.json'):

@@ -319,6 +319,8 @@ class UpdateDatabaseThread(QThread):
             categories_list.append(('Наклейки на карту', None))
         if check_group['Попсокеты ДП']:
             categories_list.append(('Попсокеты', 'Дочке понравилось'))
+        if check_group['Брелки']:
+            categories_list.append(('Брелки', None))
 
         if categories_list:
             for item in categories_list:
