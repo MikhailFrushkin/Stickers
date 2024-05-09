@@ -12,6 +12,7 @@ import requests
 from loguru import logger
 from peewee import fn
 
+from utils.Created_images_list import created_good_images
 from utils.utils import df_in_xlsx
 from pprint import pprint
 
@@ -35,10 +36,23 @@ def create_folder_order(articles, name_doc):
         all_count_images = 0
         block_sizes = 0
         block_images = []
-        directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
-        os.makedirs(directory, exist_ok=True)
+        sizes = {i.size for i in arts}
+
+        if category == 'Брелки' or category == 'Зеркальца':
+            for size in sizes:
+                filtered_arts = filter(lambda x: x.size == size, arts)
+
+                if size == 'Зеркальце':
+                    size_prod = '56'
+                else:
+                    size_prod = size
+                all_count_images += created_good_images(filtered_arts, category, size_prod, name_doc)
+
+            return all_count_images
 
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
+        directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
+        os.makedirs(directory, exist_ok=True)
 
         for index, article in enumerate(sorted_arts):
             image_paths = article.images.split(';')
@@ -158,6 +172,16 @@ def create_folder_order(articles, name_doc):
             'target_size': 2
 
         },
+        'Брелки': {
+            'arts': [],
+            'max_folder': None,
+            'target_size': None
+        },
+        'Зеркальца': {
+            'arts': [],
+            'max_folder': None,
+            'target_size': None
+        },
         'other_articles': {
             'arts': [],
             'max_folder': 1000,
@@ -175,6 +199,10 @@ def create_folder_order(articles, name_doc):
             categories_dict['Наклейки квадратные']['arts'].append(article)
         elif article.category == 'Наклейки на карту':
             categories_dict['Наклейки на карту']['arts'].append(article)
+        elif article.category == 'Брелки':
+            categories_dict['Брелки']['arts'].append(article)
+        elif article.category == 'Зеркальца':
+            categories_dict['Зеркальца']['arts'].append(article)
         else:
             categories_dict['other_articles'].append(article)
     all_images_count = 0
@@ -186,7 +214,6 @@ def create_folder_order(articles, name_doc):
                                                   target_size=value['target_size'],
                                                   category=cat)
 
-    logger.success('Завершено копирование файлов')
     return all_images_count, categories_dict
 
 

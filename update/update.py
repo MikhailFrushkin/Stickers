@@ -197,12 +197,14 @@ def main_download_site(category, config, self, brand_request=None):
                                 raise ValueError(f'Нет файла для копирования артикул: {item}')
                     except Exception as ex:
                         logger.error(ex)
-                if category == 'Брелки':
+                if category == 'Брелки' or 'Зеркальца':
+                    size_blur = size
+                    if category == 'Зеркальца':
+                        size_blur = '58'
                     for file in os.listdir(folder):
                         file_name, exp = os.path.splitext(file)
                         if file_name.isdigit():
                             image_path = os.path.join(folder, file)
-                            size_blur = size
                             output_path = os.path.join(folder, f'blur_{file}')
                             blur_image(image_path, output_path, size_blur)
                 try:

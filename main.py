@@ -226,7 +226,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         categories_dict = {}
 
         if filename:
-            count_arts, count_images, stickers_count, popsocket_count = 0, 0, 0, 0
+            count_arts, count_images = 0, 0
             if self.found_articles:
                 try:
                     count_images, categories_dict = (
@@ -243,14 +243,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             mess = f'\nАртикулов: {len(self.found_articles)}\nИзображений: {count_images}\n'
             for cat, value in categories_dict.items():
-                if value['arts']:
-                    mess += f'\n{cat}: {len(value["arts"])}'
-                    try:
-                        shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
-                                     os.path.join(config_prog.current_dir, 'Заказ'))
-                    except Exception as ex:
-                        logger.error(ex)
-                        QMessageBox.warning(self, 'Ошибка!', 'Возможно файл открыт')
+                if cat != 'Брелки' and cat != 'Зеркальца':
+                    if value['arts']:
+                        mess += f'\n{cat}: {len(value["arts"])}'
+                        try:
+                            shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
+                                         os.path.join(config_prog.current_dir, 'Заказ'))
+                        except Exception as ex:
+                            logger.error(ex)
+                            QMessageBox.warning(self, 'Ошибка!', 'Возможно файл открыт')
             QMessageBox.information(self, 'Завершено!', mess)
 
             try:
@@ -321,7 +322,8 @@ class UpdateDatabaseThread(QThread):
             categories_list.append(('Попсокеты', 'Дочке понравилось'))
         if check_group['Брелки']:
             categories_list.append(('Брелки', None))
-
+        if check_group['Зеркальца']:
+            categories_list.append(('Зеркальца', None))
         if categories_list:
             for item in categories_list:
                 try:

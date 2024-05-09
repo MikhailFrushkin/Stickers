@@ -7,12 +7,14 @@ headers = {'Content-Type': 'application/json'}
 # domain = 'http://127.0.0.1:8000/api_rest'
 domain = 'https://mycego.online/api_rest'
 base_folder = 'Новая база (1)'
+ready_path = 'Заказ'
 
 data_blur = {
         '25': 1.40,
         '37': 1.30,
         '44': 1.18,
         '56': 1.14,
+        '58': 1.12,
     }
 
 class Config:
