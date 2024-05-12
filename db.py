@@ -24,6 +24,7 @@ class Article(Model):
     skin = CharField(verbose_name='Путь к подложке', null=True)
     images = TextField(verbose_name='Пути в файлам')
     sticker = CharField(verbose_name='Путь к Шк', null=True)
+    barcode = CharField(verbose_name='Баркод', null=True)
 
     one_pdf = CharField(verbose_name='Путь к объединенному пдф', null=True)
     blur_images = TextField(verbose_name='Пути в файлам c блюром', null=True)
@@ -78,7 +79,6 @@ class Article(Model):
             blur_images = ';'.join(image_blur_filenames)
 
         images_in_folder = len(image_filenames)
-        size = size
         if len(image_filenames) != quantity:
             logger.error(f'не совпадает кол-во: {art}')
             return

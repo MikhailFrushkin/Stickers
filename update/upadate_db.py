@@ -15,7 +15,7 @@ def update_db_in_folder(config_prog):
             art = os.path.basename(root)
             category = os.path.basename(os.path.dirname(root))
             brand = os.path.basename(os.path.dirname(os.path.dirname(root)))
-            if category == 'Значки':
+            if category == 'Значки' or category == 'Брелки':
                 if '25' in art:
                     size = '25'
                 elif '37' in art:
@@ -25,7 +25,11 @@ def update_db_in_folder(config_prog):
                 elif '56' in art:
                     size = '56'
                 else:
-                    size = None
+                    size = '37'
+            elif category == 'Попсокеты' and brand == 'Дочке понравилось':
+                size = '25'
+            elif category == 'Попсокеты' and brand == 'AniKoya':
+                size = '44'
             else:
                 size = category
             Article.create_art(folder=root, art=art, quantity=quantity, size=size, category=category, brand=brand,

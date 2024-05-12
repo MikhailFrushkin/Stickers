@@ -12,7 +12,8 @@ import requests
 from loguru import logger
 from peewee import fn
 
-from utils.Created_images_list import created_good_images
+from config import ready_path
+from utils.Created_images_list import created_good_images, combine_images_to_pdf
 from utils.utils import df_in_xlsx
 from pprint import pprint
 
@@ -37,16 +38,23 @@ def create_folder_order(articles, name_doc):
         block_sizes = 0
         block_images = []
         sizes = {i.size for i in arts}
+        directory = os.path.join(config_prog.current_dir, 'Заказ')
+        os.makedirs(directory, exist_ok=True)
 
-        if category == 'Брелки' or category == 'Зеркальца':
+        if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки'\
+                or category == 'Попсокеты':
             for size in sizes:
-                filtered_arts = filter(lambda x: x.size == size, arts)
 
-                if size == 'Зеркальце':
+                filtered_arts = list(filter(lambda x: x.size == size, arts))
+
+                if category == 'Зеркальца':
                     size_prod = '56'
                 else:
                     size_prod = size
+
                 all_count_images += created_good_images(filtered_arts, category, size_prod, name_doc)
+
+                combine_images_to_pdf(filtered_arts, f'{ready_path}/{category}_{size}.pdf', size=size_prod)
 
             return all_count_images
 

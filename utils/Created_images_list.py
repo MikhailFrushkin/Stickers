@@ -16,63 +16,19 @@ pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 Image.MAX_IMAGE_PIXELS = None
 
 
-def add_header_and_footer_to_pdf(pdf_file, footer_text, A3_flag):
-    """Надписи сверху пдф файла и снизу"""
-    # Open the original PDF and extract its content
-    with open(pdf_file, "rb") as pdf:
-        pdf_content = BytesIO(pdf.read())
-    if A3_flag:
-        with open('Настройки\\Параметры значков_A3.json', 'r') as file:
-            config = json.load(file)
-        pagesize = A3
-        size = 8
-    else:
-        with open('Настройки\\Параметры значков.json', 'r') as file:
-            config = json.load(file)
-        pagesize = A4
-        size = 10
-
-    x2, y2 = config['pdf down']['x'], config['pdf down']['y']
-    # Load pages from the original PDF and add header and footer to each page
-    reader = PdfReader(pdf_content)
-    writer = PdfWriter()
-
-    for page_num in range(len(reader.pages)):
-        try:
-            page = reader.pages[page_num]
-
-            # Create a canvas for the page
-            packet = BytesIO()
-            can = canvas.Canvas(packet, pagesize=pagesize)
-
-            # Add the header text (centered) to the canvas
-            can.setFont("Arial", size=size)
-            if A3_flag:
-                can.drawCentredString(x2, y2, f"{footer_text} - Стр.{page_num + 1}")
-            else:
-                can.drawCentredString(x2, y2, f"{footer_text} - Стр.{page_num + 1}")
-            can.save()
-            packet.seek(0)
-            new_pdf = PdfReader(packet)
-            page.merge_page(new_pdf.pages[0])
-
-            writer.add_page(page)
-        except Exception as ex:
-            logger.error(ex)
-    with open(pdf_file, "wb") as output_pdf:
-        writer.write(output_pdf)
-
-
-def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, name_doc=None, A3_flag=False):
+def combine_images_to_pdf(input_arts, output_pdf, size=None, name_doc=None, A3_flag=False):
     """Создание файла с наклейками"""
     bad_skin_list = []
     x_offset = 20
     y_offset = 20
     big_list_skin = []
-    for i in input_files:
-        if i.blur_images >= 40:
+    list_skins = []
+    for i in input_arts:
+        images_blur = i.blur_images.split(';')
+        if len(images_blur) >= 40:
             big_list_skin.append(i)
-    input_files = [i for i in input_files if i not in big_list_skin]
+        else:
+            list_skins.append(i)
     if A3_flag:
         c = canvas.Canvas(output_pdf, pagesize=landscape(A3), pageCompression=1)
         img_width = (A4[0] - 2 * x_offset) / 3
@@ -86,21 +42,20 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, nam
             A3[0] - y_offset, A3[0] - y_offset - img_height - 15, A3[0] - y_offset - 2 * (img_height + 15)
         ]
 
-        total_images = len(input_files)
+        total_images = len(list_skins)
         images_per_page = 18  # Размещаем 18 изображений на одной странице
         num_pages = (total_images + images_per_page - 1) // images_per_page
 
         for page in range(num_pages):
             start_idx = page * images_per_page
             end_idx = min(start_idx + images_per_page, total_images)
-            for i, img in enumerate(input_files[start_idx:end_idx]):
+            for i, img in enumerate(list_skins[start_idx:end_idx]):
                 x = x_positions[i % 6]
                 y = y_positions[i // 6]
                 c.setFont("Helvetica-Bold", 6)
                 c.drawString(x, y + 1, f"#{img.num_on_list}  {img.art}")
                 try:
                     logger.success(f"Добавился подложка {img.num_on_list}   {img.art}")
-                    progress.update_progress()
                     c.drawImage(img.skin, x - 10, y - img_height - 5, width=img_width, height=img_height)
                 except Exception as ex:
                     logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
@@ -108,60 +63,60 @@ def combine_images_to_pdf(input_files, output_pdf, size=None, progress=None, nam
 
         c.save()
     else:
-        c = canvas.Canvas(output_pdf, pagesize=A4)
-        img_width = (A4[0] - 2 * x_offset) / 3
-        img_height = (A4[1] - 2 * y_offset) / 3 - 5
+        try:
+            c = canvas.Canvas(output_pdf, pagesize=A4)
+            img_width = (A4[0] - 2 * x_offset) / 3
+            img_height = (A4[1] - 2 * y_offset) / 3 - 5
 
-        x_positions = [x_offset, x_offset + img_width + 5, x_offset + 2 * (img_width + 5)]
-        y_positions = [A4[1] - y_offset, A4[1] - y_offset - img_height - 10, A4[1] - y_offset - 2 * (img_height + 10)]
+            x_positions = [x_offset, x_offset + img_width + 5, x_offset + 2 * (img_width + 5)]
+            y_positions = [A4[1] - y_offset, A4[1] - y_offset - img_height - 10,
+                           A4[1] - y_offset - 2 * (img_height + 10)]
 
-        total_images = len(input_files)
-        images_per_page = 9
-        num_pages = (total_images + images_per_page - 1) // images_per_page
+            total_images = len(list_skins)
+            images_per_page = 9
+            num_pages = (total_images + images_per_page - 1) // images_per_page
 
-        for page in range(num_pages):
-            start_idx = page * images_per_page
-            end_idx = min(start_idx + images_per_page, total_images)
-            for i, img in enumerate(input_files[start_idx:end_idx]):
-                if not os.path.exists(img.skin):
-                    logger.debug(f'{img.skin} не существует')
-                else:
-                    x = x_positions[i % 3]
-                    y = y_positions[i // 3]
-                    c.setFont("Helvetica-Bold", 8)
-                    c.drawString(x, y + 2, f"#{img.num_on_list}     {img.art}")
-                    try:
-                        logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
-                        progress.update_progress()
-                        c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
-                    except Exception as ex:
-                        logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
+            for page in range(num_pages):
+                start_idx = page * images_per_page
+                end_idx = min(start_idx + images_per_page, total_images)
+                for i, img in enumerate(list_skins[start_idx:end_idx]):
+                    if not os.path.exists(img.skin):
+                        logger.debug(f'{img.skin} не существует')
+                    else:
+                        x = x_positions[i % 3]
+                        y = y_positions[i // 3]
+                        c.setFont("Helvetica-Bold", 8)
+                        c.drawString(x, y + 2, f"#{img.art}")
                         try:
+                            logger.success(f"Добавилачь подложка {img.art}")
                             c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
                         except Exception as ex:
-                            logger.error(f"Не удалось добавить подложку для {img.art} {ex} 2й раз")
-                            bad_skin_list.append(img.art)
+                            logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
+                            try:
+                                c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
+                            except Exception as ex:
+                                logger.error(f"Не удалось добавить подложку для {img.art} {ex} 2й раз")
+                                bad_skin_list.append(img.art)
 
-            c.showPage()
-        c.save()
+                c.showPage()
+            c.save()
+        except Exception as ex:
+            logger.error(ex)
 
     if big_list_skin:
-        c = canvas.Canvas(f"Файлы на печать/Большие подложки {size}.pdf", pagesize=A4)
+        c = canvas.Canvas(f"{ready_path}/Большие подложки {size}.pdf", pagesize=A4)
         img_width = 505
         img_height = 674
         for i, img in enumerate(big_list_skin):
             c.setFont("Helvetica-Bold", 8)
-            c.drawString(30, 30, f"#{img.num_on_list}     {img.art}")
+            c.drawString(30, 30, f"#{img.art}")
             try:
-                logger.success(f"Добавился скин {img.num_on_list}     {img.art}")
-                progress.update_progress()
-
+                logger.success(f"Добавился скин {img.art}")
                 c.drawImage(img.skin, 40, 100, width=img_width, height=img_height)
             except Exception as ex:
                 logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
             c.showPage()
         c.save()
-    add_header_and_footer_to_pdf(output_pdf, name_doc, A3_flag=A3_flag)
     return bad_skin_list
 
 
@@ -199,6 +154,7 @@ def distribute_images(queryset, size, category, a3_flag, count) -> tuple:
     else:
         with open('Настройки\\Параметры значков.json', 'r') as file:
             config = json.load(file)
+
     nums = config[f'{str(size)}']['nums']
     list_arts = [[None, i.images_in_folder, i.blur_images, i.id] for i in queryset]
     list_arts = sorted(list_arts, key=lambda x: x[1], reverse=True)
@@ -352,15 +308,7 @@ def created_good_images(records, category, size, name_doc, A3_flag=False):
     try:
         count = 1
         sets_of_orders, count, sum_image, sum_lists = distribute_images(records, size, category, A3_flag, count)
-        # try:
-        #     logger.debug(f'Создание наклеек {size}')
-        #     combine_images_to_pdf(queryset.order_by(Orders.num_on_list),
-        #                                           f"{ready_path}/Наклейки {size}.pdf", size, progress, name_doc,
-        #                                           A3_flag)
-        # except Exception as ex:
-        #     logger.error(ex)
-        #     logger.error(f'Не удалось создать файл с наклейками {size}')
-        #
+
         try:
             create_contact_sheet(sets_of_orders, size, name_doc, category, A3_flag)
         except Exception as ex:
@@ -368,4 +316,3 @@ def created_good_images(records, category, size, name_doc, A3_flag=False):
     except Exception as ex:
         logger.error(ex)
     return sum_image
-

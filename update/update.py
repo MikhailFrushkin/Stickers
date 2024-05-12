@@ -207,6 +207,10 @@ def main_download_site(category, config, self, brand_request=None):
                             image_path = os.path.join(folder, file)
                             output_path = os.path.join(folder, f'blur_{file}')
                             blur_image(image_path, output_path, size_blur)
+                if category == 'Попсокеты' and brand == 'Дочке понравилось':
+                    size = '25'
+                elif category == 'Попсокеты' and brand == 'AniKoya':
+                    size = '44'
                 try:
                     Article.create_art(folder, art, quantity, size, category_prod, brand, updated_at_in_site)
                 except Exception as ex:
