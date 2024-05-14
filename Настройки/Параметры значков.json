@@ -1,0 +1,34 @@
+{
+    "25": {
+        "diameter": 37,
+        "nums": 35,
+        "ICONS_PER_ROW": 5,
+        "ICONS_PER_COL": 7
+    },
+    "37": {
+        "diameter": 52,
+        "nums": 20,
+        "ICONS_PER_ROW": 4,
+        "ICONS_PER_COL": 5
+    },
+    "44": {
+        "diameter": 58,
+        "nums": 15,
+        "ICONS_PER_ROW": 3,
+        "ICONS_PER_COL": 5
+    },
+    "56": {
+        "diameter": 71,
+        "nums": 12,
+        "ICONS_PER_ROW": 3,
+        "ICONS_PER_COL": 4
+    },
+    "number on badge": {
+        "x": 1900,
+        "y": 3450
+    },
+    "pdf down": {
+        "x": 405,
+        "y": 8
+    }
+}

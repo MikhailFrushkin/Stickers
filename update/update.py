@@ -170,7 +170,7 @@ def main_download_site(category, config, self, brand_request=None):
 
                 try:
                     if os.path.exists(folder):
-                        logger.warning(f'Папка существует {art}, удалена!')
+                        logger.warning(f'Файлы артикула существуют {art}, но будут обновлены!')
                         shutil.rmtree(folder, ignore_errors=True)
 
                     os.makedirs(folder, exist_ok=True)
@@ -197,20 +197,26 @@ def main_download_site(category, config, self, brand_request=None):
                                 raise ValueError(f'Нет файла для копирования артикул: {item}')
                     except Exception as ex:
                         logger.error(ex)
-                if category == 'Брелки' or 'Зеркальца':
-                    size_blur = size
-                    if category == 'Зеркальца':
-                        size_blur = '58'
-                    for file in os.listdir(folder):
-                        file_name, exp = os.path.splitext(file)
-                        if file_name.isdigit():
-                            image_path = os.path.join(folder, file)
-                            output_path = os.path.join(folder, f'blur_{file}')
-                            blur_image(image_path, output_path, size_blur)
-                if category == 'Попсокеты' and brand == 'Дочке понравилось':
-                    size = '25'
-                elif category == 'Попсокеты' and brand == 'AniKoya':
-                    size = '44'
+                try:
+                    if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки':
+                        size_blur = size
+                        if category == 'Зеркальца':
+                            size_blur = '58'
+                        for file in os.listdir(folder):
+                            file_name, exp = os.path.splitext(file)
+                            if file_name.isdigit():
+                                image_path = os.path.join(folder, file)
+                                output_path = os.path.join(folder, f'blur_{file}')
+                                blur_image(image_path, output_path, size_blur)
+                except Exception as ex:
+                    logger.error(ex)
+
+                if category == 'Попсокеты':
+                    if brand == 'Дочке понравилось':
+                        size = '25'
+                    else:
+                        size = '44'
+
                 try:
                     Article.create_art(folder, art, quantity, size, category_prod, brand, updated_at_in_site)
                 except Exception as ex:

@@ -2,10 +2,11 @@ import asyncio
 import shutil
 import threading
 from pathlib import Path
+from pprint import pprint
 
 import qdarkstyle
 from PyQt6 import QtCore, QtGui, QtWidgets
-from PyQt6.QtCore import QThread, pyqtSignal, QTimer
+from PyQt6.QtCore import QThread, pyqtSignal, QTimer, QStringListModel
 from PyQt6.QtWidgets import QProgressBar, QFileDialog, QMessageBox
 from loguru import logger
 
@@ -30,6 +31,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.found_articles = []
         self.not_found_arts = []
         self.arts = []
+
+        self.list_model = QStringListModel()
+        self.listView.setModel(self.list_model)
 
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setGeometry(10, 10, 100, 25)
@@ -192,16 +196,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                     # Заполняем значениями из списка tuples_list и устанавливаем выравнивание и шрифт
                     for col, text in enumerate(
-                            [str(idx + 1), str(quantity), "✅" if found else "❌", art]):
+                            [str(quantity), "✅" if found else "❌", art]):
                         item = QtWidgets.QTableWidgetItem(text)
-                        if col == 3:  # Если текущий столбец - это столбец "Артикул"
+                        if col == 2:  # Если текущий столбец - это столбец "Артикул"
                             item.setTextAlignment(QtCore.Qt.AlignLeft)  # Устанавливаем выравнивание по левому краю
                         else:
                             item.setTextAlignment(
                                 QtCore.Qt.AlignCenter)  # Устанавливаем выравнивание по центру для остальных столбцов
                         item.setFont(font)  # Устанавливаем шрифт
                         self.tableWidget.setItem(idx, col, item)
-
             except Exception as ex:
                 logger.error(f'ошибка чтения xlsx {ex}')
                 QMessageBox.information(self, 'Инфо', f'ошибка чтения xlsx {ex}')
@@ -254,6 +257,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             QMessageBox.warning(self, 'Ошибка!', 'Возможно файл открыт')
             QMessageBox.information(self, 'Завершено!', mess)
 
+            self.add_to_list_view(self.name_doc)
+            self.add_to_list_view(mess)
+
             try:
                 path = os.path.join(config_prog.current_dir, 'Заказ')
                 os.startfile(path)
@@ -289,6 +295,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 QMessageBox.information(self, 'Инфо', 'Не найденны шк')
         else:
             QMessageBox.information(self, 'Инфо', 'Загрузите заказ')
+
+    def add_to_list_view(self, text):
+        if text:
+            article_list = self.list_model.stringList()
+            article_list.append(text)
+            self.list_model.setStringList(article_list)
 
     def __enter__(self):
         db.connect()
