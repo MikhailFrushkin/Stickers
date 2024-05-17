@@ -9,6 +9,11 @@ from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
 
 
+def chunk_list(lst, chunk_size=4):
+    """Divide a list into chunks of a specified size."""
+    return [lst[i:i + chunk_size] for i in range(0, len(lst), chunk_size)]
+
+
 def remove_russian_letters(input_string):
     """Удаление русских букв из строки"""
     # Используем регулярное выражение для поиска всех русских букв
@@ -62,4 +67,3 @@ def rename_files(file_path: str, new_name: str):
         return new_path
     except Exception as ex:
         logger.error(f'не удалось переименовать файл {file_path}\n{ex}')
-

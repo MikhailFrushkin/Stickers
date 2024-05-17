@@ -1,48 +1,161 @@
-import asyncio
 import os
 import random
 import re
 import shutil
-import time
 
 import PyPDF2
-import aiohttp
 import pandas as pd
 import requests
 from loguru import logger
-from peewee import fn
 
 from config import ready_path
 from utils.Created_images_list import created_good_images, combine_images_to_pdf
-from utils.utils import df_in_xlsx
-from pprint import pprint
+from utils.utils import df_in_xlsx, chunk_list
+
+
+def fill_list(lst, target_size):
+    """
+    Заполняет список до нужного размера, повторяя его элементы.
+    """
+    if len(lst) >= target_size:
+        return lst[:target_size]
+    else:
+        repetitions = target_size // len(lst)
+        remainder = target_size % len(lst)
+        return lst * repetitions + lst[:remainder]
+
+
+def copy_image_files(filled_list, directory, count, count_images, all_count_images):
+    for image_path in filled_list:
+        try:
+            exp = os.path.splitext(os.path.basename(image_path))[1]
+            new_filename = f"{count}{exp}"
+            destination_path = os.path.join(directory, new_filename)
+            shutil.copy2(image_path, destination_path)
+            count += 1
+            count_images += 1
+            all_count_images += 1
+        except Exception as ex:
+            logger.error(f"Error copying file {image_path}: {ex}")
+    return count, count_images, all_count_images
+
+
+def add_random_images(images_list):
+    unique_elements = list(set(images_list))
+
+    # Если уникальных элементов меньше трех, берем все
+    if len(unique_elements) < 3:
+        unique_random_elements = list(unique_elements)
+        # Дополнение до трех элементов из повторяющихся
+        while len(unique_random_elements) < 3:
+            random_element = random.choice(images_list)
+            if random_element not in unique_random_elements:
+                unique_random_elements.append(random_element)
+    else:
+        unique_random_elements = random.sample(unique_elements, 3)
+    return unique_random_elements
+
+
+def copy_images_number(arts_number, number, max_folder, category, all_count_images, config_prog):
+    """
+    Копирует изображения из списка статей в папки, ограничивая количество файлов в папке.
+    """
+    dir_count = 1
+    count = 1
+    count_images = 0
+    directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{number}шт._{dir_count}')
+    os.makedirs(directory, exist_ok=True)
+
+    if number == 12:
+        for article in arts_number:
+            image_paths = article.images.split(';')
+            filled_list = fill_list(image_paths, 15 * (len(image_paths) // 15 + 1)) if number == 12 else image_paths
+
+            if count_images + len(filled_list) > max_folder:
+                dir_count += 1
+                directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{number}шт._{dir_count}')
+                os.makedirs(directory, exist_ok=True)
+                count_images = 0
+
+            count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
+                                                                     all_count_images)
+
+    elif number == 6:
+        for article in arts_number:
+            filled_list = []
+            image_paths = article.images.split(';')
+            filled_list.extend(image_paths * 2)
+            random_elements = add_random_images(filled_list)
+            filled_list.extend(random_elements)
+
+            if count_images + len(filled_list) > max_folder:
+                dir_count += 1
+                directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{number}шт._{dir_count}')
+                os.makedirs(directory, exist_ok=True)
+                count_images = 0
+
+            count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
+                                                                     all_count_images)
+
+    elif number == 2:
+        chunk_list_number_6 = chunk_list(arts_number, 3)
+        for chunk in chunk_list_number_6:
+            filled_list = []
+            for item in chunk:
+                image_paths = item.images.split(';')
+                filled_list.extend(image_paths * (6 // len(chunk)))
+
+            random_elements = add_random_images(filled_list)
+            filled_list.extend(random_elements)
+
+            if count_images + len(filled_list) > max_folder:
+                dir_count += 1
+                directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{number}шт._{dir_count}')
+                os.makedirs(directory, exist_ok=True)
+                count_images = 0
+
+            count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
+                                                                     all_count_images)
+
+    return all_count_images
+
+
+def created_stickers(arts, max_folder, category):
+    """
+    Создает наклейки из списка статей, разделяя их по количеству и копируя изображения в соответствующие папки.
+    """
+    from main import config_prog
+    all_count_images = 0
+
+    quantity_2 = [article for article in arts if article.quantity == 2]
+    quantity_6 = [article for article in arts if article.quantity == 6]
+    quantity_12_or_more = [article for article in arts if article.quantity >= 12]
+
+    if quantity_12_or_more:
+        all_count_images = copy_images_number(quantity_12_or_more, 12, max_folder, category, all_count_images,
+                                              config_prog)
+
+    # Пример вызова для quantity_6 и quantity_2 (если нужно)
+    if quantity_6:
+        all_count_images = copy_images_number(quantity_6, 6, max_folder, category, all_count_images, config_prog)
+    if quantity_2:
+        all_count_images = copy_images_number(quantity_2, 2, max_folder, category, all_count_images, config_prog)
+
+    return all_count_images
 
 
 def create_folder_order(articles, name_doc):
     from main import config_prog
-
-    def fill_list(lst, target_size):
-        if len(lst) >= target_size:
-            return lst[:target_size]
-        else:
-            repetitions = target_size // len(lst)
-            remainder = target_size % len(lst)
-            filled_lst = lst * repetitions + lst[:remainder]
-            return filled_lst
-
     def copy_files_folder(arts, max_folder, target_size, category):
         count = 1
         dir_count = 1
         count_images = 0
         all_count_images = 0
-        block_sizes = 0
-        block_images = []
         sizes = {i.size for i in arts}
         directory = os.path.join(config_prog.current_dir, 'Заказ')
         os.makedirs(directory, exist_ok=True)
 
-        if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки'\
-                or category == 'Попсокеты':
+        if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки':
             for size in sizes:
 
                 filtered_arts = list(filter(lambda x: x.size == size, arts))
@@ -61,97 +174,42 @@ def create_folder_order(articles, name_doc):
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
         directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
         os.makedirs(directory, exist_ok=True)
-
-        for index, article in enumerate(sorted_arts):
-            image_paths = article.images.split(';')
-            len_images = len(image_paths)
-            filled_list = []
-            if not target_size:
-                if article.quantity >= 12:
-                    len_blocks = len_images // 15 + 1
-                    target_size_block = 15 * len_blocks
-                    filled_list = fill_list(image_paths, target_size_block)
-                else:
-                    if block_sizes + article.quantity * 2 > 15:
-                        random_images = random.sample(list(set(block_images)), 15 - block_sizes)
-                        filled_list.extend(random_images)
-
-                        block_sizes = article.quantity * 2
-                        block_images = image_paths * 2
-                        filled_list.extend(image_paths * 2)
-                    else:
-                        block_sizes += article.quantity * 2
-                        block_images.extend(image_paths * 2)
-                        filled_list = image_paths * 2
-
-            elif target_size == 1:
-                filled_list = image_paths
-            elif target_size == 2:
-                if article.quantity == 1:
-                    filled_list = image_paths * 2
-                else:
+        if category == 'Наклейки 3-D':
+            return created_stickers(sorted_arts, max_folder, category)
+        else:
+            for index, article in enumerate(sorted_arts):
+                image_paths = article.images.split(';')
+                if target_size == 1:
                     filled_list = image_paths
-            else:
-                target_size_block = article.quantity
-                filled_list = fill_list(image_paths, target_size_block)
+                elif target_size == 2:
+                    if article.quantity == 1:
+                        filled_list = image_paths * 2
+                    else:
+                        filled_list = image_paths
+                else:
+                    target_size_block = article.quantity
+                    filled_list = fill_list(image_paths, target_size_block)
 
-            article_images_count = len(filled_list)
-            if count_images + article_images_count > max_folder:
-                if block_sizes != 15:
+                article_images_count = len(filled_list)
+                if count_images + article_images_count > max_folder:
+                    dir_count += 1
+                    directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
+                    os.makedirs(directory, exist_ok=True)
+                    count_images = 0
+
+                for image_path in filled_list:
                     try:
-                        try:
-                            random_images = random.sample(list(set(block_images)), 15 - block_sizes)
-                        except:
-                            random_images = random.choices(list(set(block_images)), k=15 - block_sizes)
-
-                        for file in random_images:
-                            exp = os.path.splitext(os.path.basename(file))[1]
-                            new_filename = f"{count}{exp}"
-                            destination_path = os.path.join(directory, new_filename)
-                            shutil.copy2(file, destination_path)
-                            count += 1
-                            count_images += 1
-                            all_count_images += 1
+                        exp = os.path.splitext(os.path.basename(image_path))[1]
+                        new_filename = f"{count}{exp}"
+                        destination_path = os.path.join(directory, new_filename)
+                        shutil.copy2(image_path, destination_path)
+                        count += 1
+                        count_images += 1
+                        all_count_images += 1
                     except Exception as ex:
+                        logger.error(image_path)
                         logger.error(ex)
-                block_sizes = 0
-                block_images = []
 
-                dir_count += 1
-                directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
-                os.makedirs(directory, exist_ok=True)
-                count_images = 0
-
-            for image_path in filled_list:
-                try:
-                    exp = os.path.splitext(os.path.basename(image_path))[1]
-                    new_filename = f"{count}{exp}"
-                    destination_path = os.path.join(directory, new_filename)
-                    shutil.copy2(image_path, destination_path)
-                    count += 1
-                    count_images += 1
-                    all_count_images += 1
-                except Exception as ex:
-                    logger.error(image_path)
-                    logger.error(ex)
-
-        if block_sizes != 15:
-            try:
-                try:
-                    random_images = random.sample(list(set(block_images)), 15 - block_sizes)
-                except:
-                    random_images = random.choices(list(set(block_images)), k=15 - block_sizes)
-
-                for file in random_images:
-                    exp = os.path.splitext(os.path.basename(file))[1]
-                    new_filename = f"{count}{exp}"
-                    destination_path = os.path.join(directory, new_filename)
-                    shutil.copy2(file, destination_path)
-                    count += 1
-                    count_images += 1
-                    all_count_images += 1
-            except Exception as ex:
-                logger.error(ex)
         return all_count_images
 
     shutil.rmtree(os.path.join(config_prog.current_dir, 'Заказ'), ignore_errors=True)
