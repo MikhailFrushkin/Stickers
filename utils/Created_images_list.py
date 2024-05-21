@@ -24,8 +24,6 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category):
     y_offset = 20
     big_list_skin = []
     list_skins = []
-
-
     for i in input_arts:
         if category == 'Попсокеты ДП':
             list_skins.append(i)
@@ -35,11 +33,16 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category):
                 big_list_skin.append(i)
             else:
                 list_skins.append(i)
+    # Размер подложки
+    if input_arts[0].brand == 'Дочке понравилось':
+        img_width = mm_to_points(600)
+        img_height = mm_to_points(800)
+    else:
+        img_width = (A4[0] - 2 * x_offset) / 3
+        img_height = (A4[1] - 2 * y_offset) / 3 - 5
+
     if A3_flag:
         c = canvas.Canvas(output_pdf, pagesize=landscape(A3), pageCompression=1)
-        img_width = (A4[0] - 2 * x_offset) / 3
-        img_height = (A4[1] - 2 * y_offset) / 3 - 10
-
         x_positions = [
             x_offset, x_offset + img_width + 10, x_offset + 2 * (img_width + 10),
                       x_offset + 3 * (img_width + 10), x_offset + 4 * (img_width + 10), x_offset + 5 * (img_width + 10)
@@ -71,13 +74,7 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category):
     else:
         try:
             c = canvas.Canvas(output_pdf, pagesize=A4)
-            #Размер подложки
-            if input_arts[0].brand == 'Дочке понравилось':
-                img_width = mm_to_points(600)
-                img_height = mm_to_points(800)
-            else:
-                img_width = (A4[0] - 2 * x_offset) / 3
-                img_height = (A4[1] - 2 * y_offset) / 3 - 5
+
             x_positions = [x_offset, x_offset + img_width + 5, x_offset + 2 * (img_width + 5)]
             y_positions = [A4[1] - y_offset, A4[1] - y_offset - img_height - 10,
                            A4[1] - y_offset - 2 * (img_height + 10)]

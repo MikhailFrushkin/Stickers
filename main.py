@@ -247,9 +247,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             mess = f'\nАртикулов: {len(self.found_articles)}\nИзображений: {count_images}\n'
             for cat, value in categories_dict.items():
-                if cat != 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты':
-                    if value['arts']:
-                        mess += f'\n{cat}: {len(value["arts"])}'
+                if value['arts']:
+                    arts = value["arts"]
+                    total_quantity = sum(article.quantity for article in arts)
+                    mess += f'\n{cat}\nАртикулов: {len(arts)}\tкол-во: {total_quantity}\n'
+                    if cat != 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты':
                         try:
                             shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
                                          os.path.join(config_prog.current_dir, 'Заказ'))
