@@ -70,8 +70,8 @@ def create_download_data(item):
         logger.error(ex)
 
 
-def get_arts_in_base(category):
-    records = Article.select().where(Article.category == category)
+def get_arts_in_base(category, brand_request):
+    records = Article.select().where(Article.category == category, Article.brand == brand_request)
     art_list = list(set(i.art.upper() for i in records))
     return art_list
 
@@ -121,14 +121,14 @@ def copy_image(image_path, count):
         shutil.copy2(image_path, os.path.join(folder_art, f'{i + 2}.{exp}'))
 
 
-def main_download_site(category, config, self, brand_request=None):
+def main_download_site(category, config, self, brand_request='AniKoya'):
     def chunk_list(lst, chunk_size):
         for i in range(0, len(lst), chunk_size):
             yield lst[i:i + chunk_size]
 
     chunk_size = 20
 
-    art_list = get_arts_in_base(category)
+    art_list = get_arts_in_base(category, brand_request)
     data = get_products(category, brand_request)
 
     logger.debug(f'Артикулов в базе:{len(art_list)}')
@@ -198,10 +198,9 @@ def main_download_site(category, config, self, brand_request=None):
                     except Exception as ex:
                         logger.error(ex)
                 try:
-                    if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки':
+                    if (category == 'Брелки' or category == 'Зеркальца' or category == 'Значки'
+                            or (category == 'Попсокеты' and size == '44')):
                         size_blur = size
-                        if category == 'Зеркальца':
-                            size_blur = '58'
                         for file in os.listdir(folder):
                             file_name, exp = os.path.splitext(file)
                             if file_name.isdigit():
@@ -210,12 +209,6 @@ def main_download_site(category, config, self, brand_request=None):
                                 blur_image(image_path, output_path, size_blur)
                 except Exception as ex:
                     logger.error(ex)
-
-                if category == 'Попсокеты':
-                    if brand == 'Дочке понравилось':
-                        size = '25'
-                    else:
-                        size = '44'
 
                 try:
                     Article.create_art(folder, art, quantity, size, category_prod, brand, updated_at_in_site)

@@ -11,24 +11,30 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from config import ready_path
+from utils.utils import mm_to_points
 
 pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 Image.MAX_IMAGE_PIXELS = None
 
 
-def combine_images_to_pdf(input_arts, output_pdf, size=None, name_doc=None, A3_flag=False):
+def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category):
     """Создание файла с наклейками"""
     bad_skin_list = []
     x_offset = 20
     y_offset = 20
     big_list_skin = []
     list_skins = []
+
+
     for i in input_arts:
-        images_blur = i.blur_images.split(';')
-        if len(images_blur) >= 40:
-            big_list_skin.append(i)
-        else:
+        if category == 'Попсокеты ДП':
             list_skins.append(i)
+        else:
+            images_blur = i.blur_images.split(';')
+            if len(images_blur) >= 40:
+                big_list_skin.append(i)
+            else:
+                list_skins.append(i)
     if A3_flag:
         c = canvas.Canvas(output_pdf, pagesize=landscape(A3), pageCompression=1)
         img_width = (A4[0] - 2 * x_offset) / 3
@@ -65,9 +71,13 @@ def combine_images_to_pdf(input_arts, output_pdf, size=None, name_doc=None, A3_f
     else:
         try:
             c = canvas.Canvas(output_pdf, pagesize=A4)
-            img_width = (A4[0] - 2 * x_offset) / 3
-            img_height = (A4[1] - 2 * y_offset) / 3 - 5
-
+            #Размер подложки
+            if input_arts[0].brand == 'Дочке понравилось':
+                img_width = mm_to_points(600)
+                img_height = mm_to_points(800)
+            else:
+                img_width = (A4[0] - 2 * x_offset) / 3
+                img_height = (A4[1] - 2 * y_offset) / 3 - 5
             x_positions = [x_offset, x_offset + img_width + 5, x_offset + 2 * (img_width + 5)]
             y_positions = [A4[1] - y_offset, A4[1] - y_offset - img_height - 10,
                            A4[1] - y_offset - 2 * (img_height + 10)]
@@ -88,7 +98,7 @@ def combine_images_to_pdf(input_arts, output_pdf, size=None, name_doc=None, A3_f
                         c.setFont("Helvetica-Bold", 8)
                         c.drawString(x, y + 2, f"#{img.art}")
                         try:
-                            logger.success(f"Добавилачь подложка {img.art}")
+                            logger.success(f"Добавилась подложка {img.art}")
                             c.drawImage(img.skin, x - 10, y - img_height, width=img_width, height=img_height)
                         except Exception as ex:
                             logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
@@ -120,11 +130,17 @@ def combine_images_to_pdf(input_arts, output_pdf, size=None, name_doc=None, A3_f
     return bad_skin_list
 
 
-def write_images_art(image, text):
+def write_images_art(image, category,  text):
     """Нанесения номера на значке"""
     width, height = image.size
     draw = ImageDraw.Draw(image)
-
+    if category == 'Зеркальца':
+        text = int(text)
+        if text % 2 == 0:
+            text = text // 2
+        else:
+            text = text // 2 + 1
+        text = str(text)
     # Calculate the font size based on the image width
     font_size = int(width / 18)
     font = ImageFont.truetype("arial.ttf", size=font_size)
@@ -147,7 +163,7 @@ def write_page_name(image, text, x, y):
     return image
 
 
-def distribute_images(queryset, size, category, a3_flag, count) -> tuple:
+def distribute_images(queryset, size, category, a3_flag, count, list_model) -> tuple:
     if a3_flag:
         with open('Настройки\\Параметры значков_A3.json', 'r') as file:
             config = json.load(file)
@@ -156,7 +172,12 @@ def distribute_images(queryset, size, category, a3_flag, count) -> tuple:
             config = json.load(file)
 
     nums = config[f'{str(size)}']['nums']
-    list_arts = [[None, i.images_in_folder, i.blur_images, i.id] for i in queryset]
+    list_arts = []
+    for i in queryset:
+        list_arts.append([None, i.images_in_folder, i.blur_images, i.id])
+        if category == 'Зеркальца':
+            list_arts.append([None, i.images_in_folder, i.blur_images, i.id])
+    # list_arts = [[None, i.images_in_folder, i.blur_images, i.id] for i in queryset]
     list_arts = sorted(list_arts, key=lambda x: x[1], reverse=True)
     # Список для хранения наборов
     sets_of_orders = []
@@ -224,9 +245,15 @@ def distribute_images(queryset, size, category, a3_flag, count) -> tuple:
 
     sum_image = sum([len(i) for i in sets_of_orders])
     sum_lists = len(sets_of_orders)
-    logger.info(f'Сумма изображений {category} {size}: {sum_image}')
-    # logger.info(f'Сумма значков на листах: {set([len(i) for i in sets_of_orders])}')
-    logger.info(f'Количество листов: {sum_lists}')
+
+    text1 = f'Сумма изображений {category} {size}: {sum_image}'
+    text2 = f'Количество листов: {sum_lists}'
+    text3 = f'Сумма изображений на листах: {set([len(i) for i in sets_of_orders])}'
+    logger.info(text1)
+    logger.info(text2)
+    display = list_model.stringList()
+    display.append(f'{text1}\n{text2}')
+    list_model.setStringList(display)
     return sets_of_orders, count, sum_image, sum_lists
 
 
@@ -252,7 +279,7 @@ def create_contact_sheet(images, size, name_doc, category, A3_flag=False):
     mm_to_inch = 25.4
     image_width = int(image_width_mm * 300 / mm_to_inch)
     image_height = int(image_height_mm * 300 / mm_to_inch)
-
+    count_img = 1
     for index, img in enumerate(images, start=1):
         try:
             contact_sheet = Image.new('RGBA', (a4_width, a4_height), (255, 255, 255, 0))
@@ -262,7 +289,7 @@ def create_contact_sheet(images, size, name_doc, category, A3_flag=False):
                 for j in range(config[f'{str(size)}']['ICONS_PER_ROW']):
                     try:
                         image = Image.open(img[i * config[f'{str(size)}']['ICONS_PER_ROW'] + j][0].strip())
-                        image = write_images_art(image,
+                        image = write_images_art(image, category,
                                                  f'{img[i * config[f"{str(size)}"]["ICONS_PER_ROW"] + j][1]}')
                         image = image.resize((image_width, image_height), Image.LANCZOS)
                     except Exception as ex:
@@ -272,6 +299,16 @@ def create_contact_sheet(images, size, name_doc, category, A3_flag=False):
                             contact_sheet.paste(image, (j * image_width - 10, i * image_height + 10 * (i + 1)))
                             border_rect = [j * image_width - 10, i * image_height + 10 * (i + 1),
                                            (j + 1) * image_width - 10, (i + 1) * image_height + 10 * (i + 1)]
+                        elif size == '58':
+                            if count_img % 2 != 0:
+                                contact_sheet.paste(image, (j * image_width + 100, i * image_height + 100 * (i + 1)))
+                                border_rect = [j * image_width + 100, i * image_height + 100 * (i + 1),
+                                               (j + 1) * image_width + 100, (i + 1) * image_height + 100 * (i + 1)]
+                            else:
+                                contact_sheet.paste(image, (j * image_width + 100 * 2, i * image_height + 100 * (i + 1)))
+                                border_rect = [j * image_width + 100 * 2, i * image_height + 100 * (i + 1),
+                                               (j + 1) * image_width + 100 * 2, (i + 1) * image_height + 100 * (i + 1)]
+
                         elif size == '25' or size == '44':
                             contact_sheet.paste(image, (j * image_width + 100, i * image_height + 10 * (i + 1)))
                             border_rect = [j * image_width + 100, i * image_height + 10 * (i + 1),
@@ -280,6 +317,7 @@ def create_contact_sheet(images, size, name_doc, category, A3_flag=False):
                             contact_sheet.paste(image, (j * image_width + 10, i * image_height + 10 * (i + 1)))
                             border_rect = [j * image_width + 10, i * image_height + 10 * (i + 1),
                                            (j + 1) * image_width + 10, (i + 1) * image_height + 10 * (i + 1)]
+                        count_img += 1
                     except Exception as ex:
                         break
                     try:
@@ -303,11 +341,11 @@ def create_contact_sheet(images, size, name_doc, category, A3_flag=False):
             logger.error(img)
 
 
-def created_good_images(records, category, size, name_doc, A3_flag=False):
+def created_good_images(records, category, size, name_doc, A3_flag, list_model):
     sum_image = 0
     try:
         count = 1
-        sets_of_orders, count, sum_image, sum_lists = distribute_images(records, size, category, A3_flag, count)
+        sets_of_orders, count, sum_image, sum_lists = distribute_images(records, size, category, A3_flag, count, list_model)
 
         try:
             create_contact_sheet(sets_of_orders, size, name_doc, category, A3_flag)

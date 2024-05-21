@@ -22,17 +22,18 @@ def read_excel_file(file: str):
             logger.error(f'Ошибка чтения файла {file}')
             return
         art_column = None
+        df = df.fillna("")
         for i in df.columns:
             if 'артикул продавца' in i.lower():
                 art_column = i
                 break
         if not art_column:
-            logger.error(f'Не найден столбец с артикулом')
+            logger.error(f'Не найден столбец с артикулом "Артикул продавца"')
             return
         # Применение upper() к столбцу с артикулами
         df[art_column] = df[art_column].apply(lambda x: x.upper() if isinstance(x, str) else x)
-        arts_df = df[art_column]
-
+        # Фильтрация значений "" из столбца с артикулами
+        arts_df = df[df[art_column] != ""][art_column]
         # Группировка и подсчет количества каждого артикула
         counts = arts_df.value_counts().reset_index()
         counts.columns = ['артикул', 'количество']

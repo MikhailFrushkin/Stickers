@@ -30,6 +30,8 @@ def update_db_in_folder(config_prog):
                 size = '25'
             elif category == 'Попсокеты' and brand == 'AniKoya':
                 size = '44'
+            elif category == 'Зеркальца':
+                size = '58'
             else:
                 size = category
             Article.create_art(folder=root, art=art, quantity=quantity, size=size, category=category, brand=brand,

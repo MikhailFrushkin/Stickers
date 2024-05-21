@@ -229,11 +229,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         categories_dict = {}
 
         if filename:
+            self.add_to_list_view(self.name_doc)
             count_arts, count_images = 0, 0
             if self.found_articles:
                 try:
                     count_images, categories_dict = (
-                        create_folder_order(self.found_articles, self.name_doc))
+                        create_folder_order(self.found_articles, self.name_doc, self.list_model))
                 except Exception as ex:
                     logger.error(ex)
             else:
@@ -246,7 +247,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             mess = f'\nАртикулов: {len(self.found_articles)}\nИзображений: {count_images}\n'
             for cat, value in categories_dict.items():
-                if cat != 'Брелки' and cat != 'Зеркальца':
+                if cat != 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты':
                     if value['arts']:
                         mess += f'\n{cat}: {len(value["arts"])}'
                         try:
@@ -257,7 +258,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                             QMessageBox.warning(self, 'Ошибка!', 'Возможно файл открыт')
             QMessageBox.information(self, 'Завершено!', mess)
 
-            self.add_to_list_view(self.name_doc)
             self.add_to_list_view(mess)
 
             try:
@@ -298,9 +298,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def add_to_list_view(self, text):
         if text:
-            article_list = self.list_model.stringList()
-            article_list.append(text)
-            self.list_model.setStringList(article_list)
+            display = self.list_model.stringList()
+            display.append(text)
+            self.list_model.setStringList(display)
 
     def __enter__(self):
         db.connect()
@@ -336,6 +336,8 @@ class UpdateDatabaseThread(QThread):
             categories_list.append(('Брелки', None))
         if check_group['Зеркальца']:
             categories_list.append(('Зеркальца', None))
+        if check_group['Попсокеты']:
+            categories_list.append(('Попсокеты', None))
         if categories_list:
             for item in categories_list:
                 try:

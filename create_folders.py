@@ -144,9 +144,12 @@ def created_stickers(arts, max_folder, category):
     return all_count_images
 
 
-def create_folder_order(articles, name_doc):
+def create_folder_order(articles, name_doc, list_model):
     from main import config_prog
-    def copy_files_folder(arts, max_folder, target_size, category):
+    def copy_files_folder(arts, max_folder, target_size, category, list_model):
+        A3_flag = False
+        brand = arts[0].brand
+
         count = 1
         dir_count = 1
         count_images = 0
@@ -154,20 +157,20 @@ def create_folder_order(articles, name_doc):
         sizes = {i.size for i in arts}
         directory = os.path.join(config_prog.current_dir, 'Заказ')
         os.makedirs(directory, exist_ok=True)
-
-        if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки':
+        if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки' or category == 'Попсокеты':
             for size in sizes:
 
                 filtered_arts = list(filter(lambda x: x.size == size, arts))
 
                 if category == 'Зеркальца':
-                    size_prod = '56'
+                    size_prod = '58'
                 else:
                     size_prod = size
 
-                all_count_images += created_good_images(filtered_arts, category, size_prod, name_doc)
-
-                combine_images_to_pdf(filtered_arts, f'{ready_path}/{category}_{size}.pdf', size=size_prod)
+                all_count_images += created_good_images(filtered_arts, category, size_prod, name_doc, A3_flag,
+                                                        list_model)
+                combine_images_to_pdf(filtered_arts, f'{ready_path}/{category}_{size}.pdf', size=size_prod,
+                                      A3_flag=A3_flag, category=category)
 
             return all_count_images
 
@@ -177,7 +180,12 @@ def create_folder_order(articles, name_doc):
         if category == 'Наклейки 3-D':
             return created_stickers(sorted_arts, max_folder, category)
         else:
-            for index, article in enumerate(sorted_arts):
+            if category == 'Наклейки квадратные':
+                arts = sorted_arts
+            if category == 'Попсокеты ДП':
+                combine_images_to_pdf(arts, f'{ready_path}/{category}_{brand}.pdf', size=category,
+                                      A3_flag=A3_flag, category=category)
+            for index, article in enumerate(arts):
                 image_paths = article.images.split(';')
                 if target_size == 1:
                     filled_list = image_paths
@@ -226,16 +234,22 @@ def create_folder_order(articles, name_doc):
             'target_size': 1
 
         },
+        'Попсокеты': {
+            'arts': [],
+            'max_folder': None,
+            'target_size': None
+
+        },
         'Наклейки квадратные': {
             'arts': [],
-            'max_folder': 32,
+            'max_folder': 64,
             'target_size': 1
 
         },
         'Наклейки на карту': {
             'arts': [],
-            'max_folder': 19 * 2,
-            'target_size': 2
+            'max_folder': 38,
+            'target_size': 1
 
         },
         'Брелки': {
@@ -267,10 +281,12 @@ def create_folder_order(articles, name_doc):
             categories_dict['Наклейки на карту']['arts'].append(article)
         elif article.category == 'Брелки':
             categories_dict['Брелки']['arts'].append(article)
+        elif article.category == 'Попсокеты':
+            categories_dict['Попсокеты']['arts'].append(article)
         elif article.category == 'Зеркальца':
             categories_dict['Зеркальца']['arts'].append(article)
         else:
-            categories_dict['other_articles'].append(article)
+            categories_dict['other_articles']['arts'].append(article)
     all_images_count = 0
 
     for cat, value in categories_dict.items():
@@ -278,7 +294,7 @@ def create_folder_order(articles, name_doc):
             all_images_count += copy_files_folder(arts=value['arts'],
                                                   max_folder=value['max_folder'],
                                                   target_size=value['target_size'],
-                                                  category=cat)
+                                                  category=cat, list_model=list_model)
 
     return all_images_count, categories_dict
 

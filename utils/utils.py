@@ -67,3 +67,9 @@ def rename_files(file_path: str, new_name: str):
         return new_path
     except Exception as ex:
         logger.error(f'не удалось переименовать файл {file_path}\n{ex}')
+
+
+def mm_to_points(mm):
+    inches = mm / 254
+    points = inches * 72
+    return points

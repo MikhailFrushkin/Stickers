@@ -23,6 +23,12 @@
         "ICONS_PER_ROW": 3,
         "ICONS_PER_COL": 4
     },
+    "58": {
+        "diameter": 77,
+        "nums": 6,
+        "ICONS_PER_ROW": 2,
+        "ICONS_PER_COL": 3
+    },
     "number on badge": {
         "x": 1900,
         "y": 3450
