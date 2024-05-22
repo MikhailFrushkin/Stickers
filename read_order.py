@@ -1,4 +1,6 @@
 import shutil
+from pprint import pprint
+
 import pandas as pd
 from loguru import logger
 from peewee import DoesNotExist
@@ -22,25 +24,46 @@ def read_excel_file(file: str):
             logger.error(f'Ошибка чтения файла {file}')
             return
         art_column = None
+        tuples_list = list()
         df = df.fillna("")
-        for i in df.columns:
-            if 'артикул продавца' in i.lower():
-                art_column = i
-                break
-        if not art_column:
-            logger.error(f'Не найден столбец с артикулом "Артикул продавца"')
-            return
-        # Применение upper() к столбцу с артикулами
-        df[art_column] = df[art_column].apply(lambda x: x.upper() if isinstance(x, str) else x)
-        # Фильтрация значений "" из столбца с артикулами
-        arts_df = df[df[art_column] != ""][art_column]
-        # Группировка и подсчет количества каждого артикула
-        counts = arts_df.value_counts().reset_index()
-        counts.columns = ['артикул', 'количество']
 
-        # Преобразование в список кортежей
-        tuples_list = counts.to_records(index=False).tolist()
+        if len(df.columns) == 2:
+            rows = []
+            df.columns = ['артикул', 'количество']
+            art_column = 'артикул'
+            df['количество'] = df['количество'].astype(int)
+            # Применение upper() к столбцу с артикулами
+            df[art_column] = df[art_column].apply(lambda x: x.upper() if isinstance(x, str) else x)
+            # Дублирование артикулов в соответствии с их количеством
+            for index, row in df.iterrows():
+                for i in range(int(row['количество'])):
+                    rows.append({'артикул': row['артикул'], 'количество': 1})
+            new_df = pd.DataFrame(rows)
+            arts_df = new_df[new_df[art_column] != ""][art_column]
+            # Группировка и подсчет количества каждого артикула
+            counts = arts_df.value_counts().reset_index()
+            counts.columns = ['артикул', 'количество']
 
+            # Преобразование в список кортежей
+            tuples_list = counts.to_records(index=False).tolist()
+        else:
+            for i in df.columns:
+                if 'артикул продавца' in i.lower():
+                    art_column = i
+                    break
+            if not art_column:
+                logger.error(f'Не найден столбец с артикулом "Артикул продавца"')
+                return
+            # Применение upper() к столбцу с артикулами
+            df[art_column] = df[art_column].apply(lambda x: x.upper() if isinstance(x, str) else x)
+            # Фильтрация значений "" из столбца с артикулами
+            arts_df = df[df[art_column] != ""][art_column]
+            # Группировка и подсчет количества каждого артикула
+            counts = arts_df.value_counts().reset_index()
+            counts.columns = ['артикул', 'количество']
+
+            # Преобразование в список кортежей
+            tuples_list = counts.to_records(index=False).tolist()
     except Exception as ex:
         logger.error(ex)
     else:

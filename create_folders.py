@@ -49,8 +49,7 @@ def add_random_images(images_list):
         # Дополнение до трех элементов из повторяющихся
         while len(unique_random_elements) < 3:
             random_element = random.choice(images_list)
-            if random_element not in unique_random_elements:
-                unique_random_elements.append(random_element)
+            unique_random_elements.append(random_element)
     else:
         unique_random_elements = random.sample(unique_elements, 3)
     return unique_random_elements
@@ -104,7 +103,6 @@ def copy_images_number(arts_number, number, max_folder, category, all_count_imag
             for item in chunk:
                 image_paths = item.images.split(';')
                 filled_list.extend(image_paths * (6 // len(chunk)))
-
             random_elements = add_random_images(filled_list)
             filled_list.extend(random_elements)
 
@@ -113,7 +111,6 @@ def copy_images_number(arts_number, number, max_folder, category, all_count_imag
                 directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{number}шт._{dir_count}')
                 os.makedirs(directory, exist_ok=True)
                 count_images = 0
-
             count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
                                                                      all_count_images)
 
@@ -134,8 +131,6 @@ def created_stickers(arts, max_folder, category):
     if quantity_12_or_more:
         all_count_images = copy_images_number(quantity_12_or_more, 12, max_folder, category, all_count_images,
                                               config_prog)
-
-    # Пример вызова для quantity_6 и quantity_2 (если нужно)
     if quantity_6:
         all_count_images = copy_images_number(quantity_6, 6, max_folder, category, all_count_images, config_prog)
     if quantity_2:
@@ -205,10 +200,16 @@ def create_folder_order(articles, name_doc, list_model):
                     os.makedirs(directory, exist_ok=True)
                     count_images = 0
 
-                for image_path in filled_list:
+                for index_img, image_path in enumerate(filled_list):
                     try:
                         exp = os.path.splitext(os.path.basename(image_path))[1]
-                        new_filename = f"{count}{exp}"
+                        if category == 'Наклейки на карту' and article.quantity == 2:
+                            if index_img == 1:
+                                new_filename = f"{count}_duo{exp}"
+                            else:
+                                new_filename = f"{count}{exp}"
+                        else:
+                            new_filename = f"{count}{exp}"
                         destination_path = os.path.join(directory, new_filename)
                         shutil.copy2(image_path, destination_path)
                         count += 1
@@ -248,7 +249,7 @@ def create_folder_order(articles, name_doc, list_model):
         },
         'Наклейки на карту': {
             'arts': [],
-            'max_folder': 38,
+            'max_folder': 32,
             'target_size': 1
 
         },
