@@ -50,7 +50,8 @@ class Article(Model):
         sticker = None
         skin = None
 
-        art = remove_russian_letters(art).upper()
+        art = art.upper()
+        # art = remove_russian_letters(art).upper()
         existing_article = cls.get_or_none(art=art, category=category, brand=brand)
         if existing_article:
             return existing_article
@@ -74,7 +75,8 @@ class Article(Model):
                 elif 'подложка' in filename:
                     skin = file_path
         images = ';'.join(image_filenames)
-
+        'NAKLEYKAKARTA-BMW_М5-UV-1'
+        'NAKLEYKAKARTA-BMW_5-UV-1'
         if image_blur_filenames:
             blur_images = ';'.join(image_blur_filenames)
 
@@ -82,11 +84,11 @@ class Article(Model):
         if len(image_filenames) != quantity:
             logger.error(f'не совпадает кол-во: {art}')
             return
-
         article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
                              brand=brand, quantity=quantity, size=size,  sticker=sticker, skin=skin,
                              updated_at_in_site=updated_at_in_site, one_pdf=one_pdf,
                              images=images, images_in_folder=images_in_folder, blur_images=blur_images)
+        print(article)
         logger.success(f'В базу добавлен артикул: {art}')
 
         return article

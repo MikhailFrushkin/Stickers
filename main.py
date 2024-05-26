@@ -324,22 +324,22 @@ class UpdateDatabaseThread(QThread):
         ]
         self.progress_updated.emit(0, 100)
         self.update_progress_message.emit('Обновление', 0, 100)
-
+        brand_request = 'AniKoya'
         categories_list = []
         if check_group['3D наклейки']:
-            categories_list.append(('Наклейки 3-D', None))
+            categories_list.append(('Наклейки 3-D', brand_request))
         if check_group['Наклейки квадратные']:
-            categories_list.append(('Наклейки квадратные', None))
+            categories_list.append(('Наклейки квадратные', brand_request))
         if check_group['Наклейки на карту']:
-            categories_list.append(('Наклейки на карту', None))
+            categories_list.append(('Наклейки на карту', brand_request))
         if check_group['Попсокеты ДП']:
             categories_list.append(('Попсокеты', 'Дочке понравилось'))
         if check_group['Брелки']:
-            categories_list.append(('Брелки', None))
+            categories_list.append(('Брелки', brand_request))
         if check_group['Зеркальца']:
-            categories_list.append(('Зеркальца', None))
+            categories_list.append(('Зеркальца', brand_request))
         if check_group['Попсокеты']:
-            categories_list.append(('Попсокеты', None))
+            categories_list.append(('Попсокеты', brand_request))
         if categories_list:
             for item in categories_list:
                 try:
@@ -372,7 +372,7 @@ class UpdateDatabaseThread(QThread):
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                logger.debug('Поиск шк на диск CRM')
+                logger.debug('Поиск шк на дискe CRM')
                 main_search_sticker(config_prog, folder_path='/Новая база (1)')
             except Exception as ex:
                 logger.error(ex)
