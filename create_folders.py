@@ -10,6 +10,7 @@ from loguru import logger
 
 from config import ready_path
 from utils.Created_images_list import created_good_images, combine_images_to_pdf
+from utils.Created_posters import generate_posters
 from utils.utils import df_in_xlsx, chunk_list
 
 
@@ -168,11 +169,12 @@ def create_folder_order(articles, name_doc, list_model):
             return all_count_images
         elif category =='Мини постеры':
             logger.warning('Создание мини постеров')
+            all_count_images = generate_posters(arts, f'{ready_path}/Мини постеры.pdf')
             return all_count_images
 
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
-        directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
-        os.makedirs(directory, exist_ok=True)
+        # directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
+        # os.makedirs(directory, exist_ok=True)
         if category == 'Наклейки 3-D':
             return created_stickers(sorted_arts, max_folder, category)
         else:
@@ -291,7 +293,7 @@ def create_folder_order(articles, name_doc, list_model):
             categories_dict['Попсокеты']['arts'].append(article)
         elif article.category == 'Зеркальца':
             categories_dict['Зеркальца']['arts'].append(article)
-        elif article.category == 'Зеркальца':
+        elif article.category == 'Мини постеры':
             categories_dict['Мини постеры']['arts'].append(article)
         else:
             categories_dict['other_articles']['arts'].append(article)

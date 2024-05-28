@@ -243,7 +243,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     arts = value["arts"]
                     total_quantity = sum(article.quantity for article in arts)
                     mess += f'\n{cat}\nАртикулов: {len(arts)}\tкол-во: {total_quantity if cat != "Зеркальца" else total_quantity * 2}\n'
-                    if cat != 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты':
+                    if cat == 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты' and cat != 'Мини постеры':
                         try:
                             shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
                                          os.path.join(config_prog.current_dir, 'Заказ'))
