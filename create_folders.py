@@ -154,9 +154,7 @@ def create_folder_order(articles, name_doc, list_model):
         os.makedirs(directory, exist_ok=True)
         if category == 'Брелки' or category == 'Зеркальца' or category == 'Значки' or category == 'Попсокеты':
             for size in sizes:
-
                 filtered_arts = list(filter(lambda x: x.size == size, arts))
-
                 if category == 'Зеркальца':
                     size_prod = '58'
                 else:
@@ -167,6 +165,9 @@ def create_folder_order(articles, name_doc, list_model):
                 combine_images_to_pdf(filtered_arts, f'{ready_path}/{category}_{size}.pdf', size=size_prod,
                                       A3_flag=A3_flag, category=category)
 
+            return all_count_images
+        elif category =='Мини постеры':
+            logger.warning('Создание мини постеров')
             return all_count_images
 
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
@@ -263,18 +264,22 @@ def create_folder_order(articles, name_doc, list_model):
             'max_folder': None,
             'target_size': None
         },
+        'Мини постеры': {
+            'arts': [],
+            'max_folder': 10_000,
+            'target_size': 1
+        },
         'other_articles': {
             'arts': [],
             'max_folder': 1000,
             'target_size': 1
-
-        },
+        }
     }
 
     for article in articles:
         if article.category == 'Наклейки 3-D':
             categories_dict['Наклейки 3-D']['arts'].append(article)
-        elif article.brand == 'Дочке понравилось' and article.category == 'Попсокеты':
+        elif article.brand == 'Дочке понравилось' and article.size == '25':
             categories_dict['Попсокеты ДП']['arts'].append(article)
         elif article.category == 'Наклейки квадратные':
             categories_dict['Наклейки квадратные']['arts'].append(article)
@@ -286,6 +291,8 @@ def create_folder_order(articles, name_doc, list_model):
             categories_dict['Попсокеты']['arts'].append(article)
         elif article.category == 'Зеркальца':
             categories_dict['Зеркальца']['arts'].append(article)
+        elif article.category == 'Зеркальца':
+            categories_dict['Мини постеры']['arts'].append(article)
         else:
             categories_dict['other_articles']['arts'].append(article)
     all_images_count = 0
@@ -356,9 +363,9 @@ def create_bad_arts(arts, name_doc, version):
         logger.error(ex)
 
 
-def upload_file(loadfile, replace=False):
+def upload_file(loadfile, replace=False, savefile_dir='Отчеты'):
     from main import config_prog
-    savefile = f'/Отчеты/{os.path.basename(loadfile)}'
+    savefile = f'/{savefile_dir}/{os.path.basename(loadfile)}'
     upload_url = "https://cloud-api.yandex.net/v1/disk/resources/upload"
     headers = {
         "Authorization": f"OAuth {config_prog.params.get('token')}"

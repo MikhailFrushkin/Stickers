@@ -13,7 +13,7 @@ from db import Article
 from utils.blur import blur_image
 
 
-def get_products(category: str, brand_request: str | None):
+def get_products(category: str, brand_request: str | None = None):
     try:
         if not brand_request:
             url = f'{domain}/products/'
@@ -70,8 +70,8 @@ def create_download_data(item):
         logger.error(ex)
 
 
-def get_arts_in_base(category, brand_request):
-    records = Article.select().where(Article.category == category, Article.brand == brand_request)
+def get_arts_in_base(category):
+    records = Article.select().where(Article.category == category)
     art_list = list(set(i.art.upper() for i in records))
     return art_list
 
@@ -121,15 +121,15 @@ def copy_image(image_path, count):
         shutil.copy2(image_path, os.path.join(folder_art, f'{i + 2}.{exp}'))
 
 
-def main_download_site(category, config, self, brand_request='AniKoya'):
+def main_download_site(category, config, self):
     def chunk_list(lst, chunk_size):
         for i in range(0, len(lst), chunk_size):
             yield lst[i:i + chunk_size]
 
     chunk_size = 20
 
-    art_list = get_arts_in_base(category, brand_request)
-    data = get_products(category, brand_request)
+    art_list = get_arts_in_base(category)
+    data = get_products(category)
 
     logger.debug(f'Артикулов в базе:{len(art_list)}')
     logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
@@ -180,7 +180,8 @@ def main_download_site(category, config, self, brand_request='AniKoya'):
                 for i in item['url_data']:
                     try:
                         destination_path = os.path.join(folder, i['name'])
-                        download_file(destination_path, i['file'], f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
+                        download_file(destination_path, i['file'],
+                                      f'{base_folder}/{category_prod}/{folder_name}{i["path"]}')
                     except Exception as ex:
                         logger.error(ex)
 

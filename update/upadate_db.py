@@ -5,7 +5,6 @@ from db import Article
 
 def update_db_in_folder(config_prog):
     directory = config_prog.params.get('Путь к базе')
-    count = 1
     for root, dirs, files in os.walk(directory):
         quantity = 0
         for file in files:
@@ -32,8 +31,11 @@ def update_db_in_folder(config_prog):
                 size = '44'
             elif category == 'Зеркальца':
                 size = '58'
+            elif category == 'Мини постеры':
+                size = 'А6'
+            elif category == 'Постеры':
+                size = 'А3'
             else:
                 size = category
             Article.create_art(folder=root, art=art, quantity=quantity, size=size, category=category, brand=brand,
                                updated_at_in_site=None)
-            count += 1

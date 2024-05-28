@@ -89,75 +89,67 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def setting_dialog(self):
         # Создаем диалоговое окно настроек
-        self.dialog = QtWidgets.QDialog()
-        self.ui = Ui_Form()
-        self.ui.setupUi(self.dialog)
+        try:
+            self.dialog = QtWidgets.QDialog()
+            self.ui = Ui_Form()
+            self.ui.setupUi(self.dialog)
 
-        config = Config()
-        params = config.params
+            config = Config()
+            params = config.params
 
-        ui = self.ui
-        ui.checkBox.setChecked(params.get("Автоматическое обновление", False))
-        ui.checkBox_2.setChecked(params.get('categories', {}).get("Значки", False))
-        ui.checkBox_4.setChecked(params.get('categories', {}).get("Попсокеты", False))
-        ui.checkBox_5.setChecked(params.get('categories', {}).get("Зеркальца", False))
-        ui.checkBox_3.setChecked(params.get('categories', {}).get("Постеры", False))
-        ui.checkBox_6.setChecked(params.get('categories', {}).get("Кружки", False))
-        ui.checkBox_8.setChecked(params.get('categories', {}).get("3D наклейки", False))
-        ui.checkBox_7.setChecked(params.get('categories', {}).get("Наклейки на карту", False))
-        ui.checkBox_10.setChecked(params.get('categories', {}).get("Брелки", False))
-        ui.checkBox_9.setChecked(params.get('categories', {}).get("Наклейки квадратные", False))
-        ui.checkBox_11.setChecked(params.get('categories', {}).get("Кружки-сердечко", False))
-        ui.checkBox_12.setChecked(params.get('categories', {}).get("Попсокеты ДП", False))
-        ui.LineEdit.setText(str(params.get("Частота обновления", 120)))
-        ui.LineEdit_2.setText(str(params.get("Путь к базе", "C:\\База")))
-        ui.LineEdit_3.setText(str(params.get("Путь к шк", "C:\\База\\ШК")))
-        ui.LineEdit_4.setText(str(params.get("token", "")))
+            ui = self.ui
 
-        self.ui.pushButton.clicked.connect(self.save_settings)  # Привязываем сохранение к кнопке "Сохранить"
-        self.ui.pushButton_2.clicked.connect(self.dialog.close)  # Привязываем закрытие к кнопке "Выход"
-        self.dialog.exec()
+            # Assign values to checkboxes based on config
+            for text in self.ui.checkBox_texts:
+                checkbox = self.dialog.findChild(QtWidgets.QCheckBox, f"checkBox_{self.ui.checkBox_texts.index(text)}")
+                if text == "Автоматическое обновление":
+                    checkbox.setChecked(params.get(text, False))
+                else:
+                    checkbox.setChecked(params.get('categories', {}).get(text, False))
+
+            # Assign values to LineEdit fields based on config
+            ui.LineEdit.setText(str(params.get("Частота обновления", 120)))
+            ui.LineEdit_2.setText(str(params.get("Путь к базе", "C:\\База")))
+            ui.LineEdit_3.setText(str(params.get("Путь к шк", "C:\\База\\ШК")))
+            ui.LineEdit_4.setText(str(params.get("token", "")))
+            ui.LineEdit_5.setText(str(params.get("machin_name", "")))
+
+            ui.pushButton.clicked.connect(self.save_settings)  # Привязываем сохранение к кнопке "Сохранить"
+            ui.pushButton_2.clicked.connect(self.dialog.close)  # Привязываем закрытие к кнопке "Выход"
+            self.dialog.exec()
+        except Exception as ex:
+            logger.error(ex)
 
     def save_settings(self):
         try:
-            # Получаем экземпляр класса Ui_Form из диалогового окна
+            # Get the instance of the Ui_Form class from the dialog window
             ui = self.ui
 
-            # Получаем текущие значения настроек из виджетов диалогового окна
-            auto_update = ui.checkBox.isChecked()
-            icons = ui.checkBox_2.isChecked()
-            popsockets = ui.checkBox_4.isChecked()
-            mirrors = ui.checkBox_5.isChecked()
-            posters = ui.checkBox_3.isChecked()
-            mugs = ui.checkBox_6.isChecked()
-            stickers_3d = ui.checkBox_8.isChecked()
-            map_stickers = ui.checkBox_7.isChecked()
-            keychains = ui.checkBox_10.isChecked()
-            square_stickers = ui.checkBox_9.isChecked()
-            heart_mugs = ui.checkBox_11.isChecked()
-            checkBox_12 = ui.checkBox_12.isChecked()
+            # Dictionary to store checkbox states
+            checkbox_states = {}
+
+            # Iterate through the checkbox texts and fetch their states
+            for text in ui.checkBox_texts:
+                checkbox = self.dialog.findChild(QtWidgets.QCheckBox, f"checkBox_{ui.checkBox_texts.index(text)}")
+                checkbox_states[text] = checkbox.isChecked()
+
+            # Fetch other settings from the UI widgets
             update_frequency = int(ui.LineEdit.text())
             base_path = os.path.abspath(ui.LineEdit_2.text())
             sh_path = os.path.abspath(ui.LineEdit_3.text())
             token = ui.LineEdit_4.text()
+            machin_name = ui.LineEdit_5.text()
 
-            # Сохраняем настройки в конфигурационный файл
-            config_prog.set_param("Автоматическое обновление", auto_update)
-            config_prog.set_param("Значки", icons)
-            config_prog.set_param("Попсокеты", popsockets)
-            config_prog.set_param("Попсокеты ДП", checkBox_12)
-            config_prog.set_param("Зеркальца", mirrors)
-            config_prog.set_param("Постеры", posters)
-            config_prog.set_param("Кружки", mugs)
-            config_prog.set_param("3D наклейки", stickers_3d)
-            config_prog.set_param("Наклейки на карту", map_stickers)
-            config_prog.set_param("Брелки", keychains)
-            config_prog.set_param("Наклейки квадратные", square_stickers)
-            config_prog.set_param("Кружки-сердечко", heart_mugs)
+            # Save settings to the configuration file
+            for key, value in checkbox_states.items():
+                config_prog.set_param(key, value)
             config_prog.set_param("Частота обновления", update_frequency)
             config_prog.set_param("Путь к базе", base_path)
             config_prog.set_param("Путь к шк", sh_path)
             config_prog.set_param("token", token)
+            config_prog.set_param("machin_name", machin_name)
+
+            # Accept the dialog and reload settings
             self.dialog.accept()
             config_prog.reload_settings()
         except Exception as ex:
@@ -219,6 +211,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     for file in os.listdir(os.path.join(config_prog.current_dir, 'Заказ')):
                         if file.startswith('Не найд'):
                             upload_file(os.path.join(config_prog.current_dir, 'Заказ', file))
+                    for file in os.listdir(os.path.join(config_prog.current_dir, 'logs')):
+                        upload_file(os.path.join(config_prog.current_dir, 'logs', file), savefile_dir='Логи')
                 except Exception as ex:
                     logger.error(ex)
 
@@ -240,10 +234,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             else:
                 QMessageBox.warning(self, 'Ой', 'Ничего не найдено')
 
-            if self.not_found_arts:
-                # Запускаем функцию во втором потоке
-                thread = threading.Thread(target=bad_arts_fix)
-                thread.start()
+            thread = threading.Thread(target=bad_arts_fix)
+            thread.start()
 
             mess = f'\nАртикулов: {len(self.found_articles)}\nИзображений: {count_images}\n'
             for cat, value in categories_dict.items():
@@ -319,31 +311,33 @@ class UpdateDatabaseThread(QThread):
     update_progress_message = pyqtSignal(str, int, int)
 
     def run(self):
+        self.progress_updated.emit(0, 100)
+        self.update_progress_message.emit('Обновление', 0, 100)
+
         check_group = config_prog.params[
             'categories'
         ]
-        self.progress_updated.emit(0, 100)
-        self.update_progress_message.emit('Обновление', 0, 100)
-        brand_request = 'AniKoya'
+
         categories_list = []
         if check_group['3D наклейки']:
-            categories_list.append(('Наклейки 3-D', brand_request))
+            categories_list.append('Наклейки 3-D')
         if check_group['Наклейки квадратные']:
-            categories_list.append(('Наклейки квадратные', brand_request))
+            categories_list.append('Наклейки квадратные')
         if check_group['Наклейки на карту']:
-            categories_list.append(('Наклейки на карту', brand_request))
-        if check_group['Попсокеты ДП']:
-            categories_list.append(('Попсокеты', 'Дочке понравилось'))
-        if check_group['Брелки']:
-            categories_list.append(('Брелки', brand_request))
-        if check_group['Зеркальца']:
-            categories_list.append(('Зеркальца', brand_request))
+            categories_list.append('Наклейки на карту')
         if check_group['Попсокеты']:
-            categories_list.append(('Попсокеты', brand_request))
+            categories_list.append('Попсокеты')
+        if check_group['Брелки']:
+            categories_list.append('Брелки')
+        if check_group['Зеркальца']:
+            categories_list.append('Зеркальца')
+        if check_group['Мини постеры']:
+            categories_list.append('Мини постеры')
+
         if categories_list:
             for item in categories_list:
                 try:
-                    main_download_site(category=item[0], config=config_prog, self=self, brand_request=item[1])
+                    main_download_site(category=item, config=config_prog, self=self)
                 except Exception as ex:
                     logger.error(ex)
 
