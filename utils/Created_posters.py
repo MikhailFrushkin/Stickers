@@ -1,4 +1,3 @@
-import re
 import tempfile
 
 from PIL import Image
@@ -6,27 +5,10 @@ from loguru import logger
 from reportlab.lib.pagesizes import A3, A6
 from reportlab.pdfgen import canvas
 
-
-def mm_to_px(mm):
-    return mm * 2.83465
+from utils.utils import mm_to_px, extract_number, update_progres_bar
 
 
-def mm_to_mm(px):
-    return px / 2.83465
-
-
-# Функция для извлечения числовой части из имени файла
-def extract_number(filename):
-    match = re.search(r'(\d+)(?=\.\w+$)', filename)
-    return int(match.group(1)) if match else 0
-
-
-def generate_mini_posters(articles, output_file):
-    image_list = []
-    # for article in articles:
-    #     image_list_art = article.images.split(';')
-    #     image_list_sorted = sorted(image_list_art, key=extract_number)
-    #     image_list.extend(image_list_sorted)
+def generate_mini_posters(articles, output_file, progress_step, progress_bar):
     a6_width, a6_height = A6
     gap_mm = 2
     gap_px = mm_to_px(gap_mm)
@@ -67,12 +49,12 @@ def generate_mini_posters(articles, output_file):
 
             except Exception as e:
                 logger.error(f"Ошибка обработки изображения {image_path}: {e}")
-
+        update_progres_bar(progress_bar, progress_step)
     pdf_file.save()
     return total_images
 
 
-def generate_posters(articles, output_file):
+def generate_posters(articles, output_file, progress_step, progress_bar):
     image_list = []
     for article in articles:
         image_list_art = article.images.split(';')
@@ -82,25 +64,29 @@ def generate_posters(articles, output_file):
     total_img = len(image_list)
     try:
         c = canvas.Canvas(output_file, pagesize=A3)
-        for i, poster_file in enumerate(image_list):
-            logger.debug(poster_file)
-            image = Image.open(poster_file)
-            width, height = image.size
-            if width > height:
-                rotated_image = image.rotate(90, expand=True)
-                try:
-                    with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
-                        rotated_image.save(temp_file.name, format='JPEG')
-                        c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
-                except Exception as ex:
-                    logger.error(ex)
-                    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-                        rotated_image.save(temp_file.name, format='PNG')
-                        c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
-            else:
-                c.drawImage(poster_file, 0, 0, width=A3[0], height=A3[1])
-            if i != total_img - 1:
-                c.showPage()
+        for article in articles:
+            image_list_art = article.images.split(';')
+            image_list_sorted = sorted(image_list_art, key=extract_number)
+            for i, poster_file in enumerate(image_list_sorted):
+                logger.debug(poster_file)
+                image = Image.open(poster_file)
+                width, height = image.size
+                if width > height:
+                    rotated_image = image.rotate(90, expand=True)
+                    try:
+                        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+                            rotated_image.save(temp_file.name, format='JPEG')
+                            c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
+                    except Exception as ex:
+                        logger.error(ex)
+                        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+                            rotated_image.save(temp_file.name, format='PNG')
+                            c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
+                else:
+                    c.drawImage(poster_file, 0, 0, width=A3[0], height=A3[1])
+                if i != total_img - 1:
+                    c.showPage()
+            update_progres_bar(progress_bar, progress_step)
         c.save()
     except Exception as ex:
         logger.error(ex)

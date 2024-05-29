@@ -122,13 +122,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def save_settings(self):
         try:
-            # Get the instance of the Ui_Form class from the dialog window
             ui = self.ui
 
-            # Dictionary to store checkbox states
             checkbox_states = {}
 
-            # Iterate through the checkbox texts and fetch their states
             for text in ui.checkBox_texts:
                 checkbox = self.dialog.findChild(QtWidgets.QCheckBox, f"checkBox_{ui.checkBox_texts.index(text)}")
                 checkbox_states[text] = checkbox.isChecked()
@@ -228,7 +225,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if self.found_articles:
                 try:
                     count_images, categories_dict = (
-                        create_folder_order(self.found_articles, self.name_doc, self.list_model))
+                        create_folder_order(self.found_articles, self.name_doc, self.list_model,
+                                            self.progress_bar))
                 except Exception as ex:
                     logger.error(ex)
             else:
@@ -243,7 +241,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     arts = value["arts"]
                     total_quantity = sum(article.quantity for article in arts)
                     mess += f'\n{cat}\nАртикулов: {len(arts)}\tкол-во: {total_quantity if cat != "Зеркальца" else total_quantity * 2}\n'
-                    if (cat == 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты' and cat != 'Мини постеры'
+                    if (cat != 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты' and cat != 'Мини постеры'
                             and cat != 'Постеры'):
                         try:
                             shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
@@ -371,7 +369,7 @@ if __name__ == '__main__':
     import os
 
     logger.add(
-        "logs/logs.log",
+        f"logs/{config_prog.params.get('machin_name', 'Не назван комп')}.log",
         rotation="20 MB",
         level="INFO",
         format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {file!s} | {line} | {message}"

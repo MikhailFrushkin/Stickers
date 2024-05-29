@@ -11,7 +11,7 @@ from loguru import logger
 from config import ready_path
 from utils.Created_images_list import created_good_images, combine_images_to_pdf
 from utils.Created_posters import generate_mini_posters, generate_posters
-from utils.utils import df_in_xlsx, chunk_list
+from utils.utils import df_in_xlsx, chunk_list, update_progres_bar
 
 
 def fill_list(lst, target_size):
@@ -56,7 +56,8 @@ def add_random_images(images_list):
     return unique_random_elements
 
 
-def copy_images_number(arts_number, number, max_folder, category, all_count_images, config_prog):
+def copy_images_number(arts_number, number, max_folder, category, all_count_images, config_prog, progress_step,
+                       progress_bar):
     """
     Копирует изображения из списка статей в папки, ограничивая количество файлов в папке.
     """
@@ -79,6 +80,7 @@ def copy_images_number(arts_number, number, max_folder, category, all_count_imag
 
             count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
                                                                      all_count_images)
+        update_progres_bar(progress_bar, progress_step)
 
     elif number == 6:
         for article in arts_number:
@@ -96,6 +98,7 @@ def copy_images_number(arts_number, number, max_folder, category, all_count_imag
 
             count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
                                                                      all_count_images)
+            update_progres_bar(progress_bar, progress_step)
 
     elif number == 2:
         chunk_list_number_6 = chunk_list(arts_number, 3)
@@ -114,11 +117,12 @@ def copy_images_number(arts_number, number, max_folder, category, all_count_imag
                 count_images = 0
             count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
                                                                      all_count_images)
+            update_progres_bar(progress_bar, progress_step)
 
     return all_count_images
 
 
-def created_stickers(arts, max_folder, category):
+def created_stickers(arts, max_folder, category, progress_step, progress_bar):
     """
     Создает наклейки из списка статей, разделяя их по количеству и копируя изображения в соответствующие папки.
     """
@@ -131,19 +135,25 @@ def created_stickers(arts, max_folder, category):
 
     if quantity_12_or_more:
         all_count_images = copy_images_number(quantity_12_or_more, 12, max_folder, category, all_count_images,
-                                              config_prog)
+                                              config_prog, progress_step, progress_bar)
     if quantity_6:
-        all_count_images = copy_images_number(quantity_6, 6, max_folder, category, all_count_images, config_prog)
+        all_count_images = copy_images_number(quantity_6, 6, max_folder, category, all_count_images, config_prog,
+                                              progress_step, progress_bar)
     if quantity_2:
-        all_count_images = copy_images_number(quantity_2, 2, max_folder, category, all_count_images, config_prog)
+        all_count_images = copy_images_number(quantity_2, 2, max_folder, category, all_count_images, config_prog,
+                                              progress_step, progress_bar)
 
     return all_count_images
 
 
-def create_folder_order(articles, name_doc, list_model):
+def create_folder_order(articles, name_doc, list_model, progress_bar):
     from main import config_prog
-    def copy_files_folder(arts, max_folder, target_size, category, list_model):
-        logger.warning(f'Создание {category}')
+    total_arts = len(articles)
+    progress_bar.setValue(0)
+    progress_step = 100 / total_arts if total_arts > 0 else 0
+
+    def copy_files_folder(arts, max_folder, target_size, category):
+        logger.warning(f'Создание {category} {name_doc}')
         A3_flag = False
         brand = arts[0].brand
 
@@ -165,20 +175,24 @@ def create_folder_order(articles, name_doc, list_model):
                 all_count_images += created_good_images(filtered_arts, category, size_prod, name_doc, A3_flag,
                                                         list_model)
                 combine_images_to_pdf(filtered_arts, f'{ready_path}/{category}_{size}.pdf', size=size_prod,
-                                      A3_flag=A3_flag, category=category)
+                                      A3_flag=A3_flag, category=category, progress_step=progress_step,
+                                      progress_bar=progress_bar)
 
             return all_count_images
         elif category == 'Мини постеры':
-            all_count_images = generate_mini_posters(arts, f'{ready_path}/Мини постеры.pdf')
+            all_count_images = generate_mini_posters(arts, f'{ready_path}/Мини постеры.pdf',
+                                                     progress_step=progress_step, progress_bar=progress_bar)
             return all_count_images
         elif category == 'Постеры':
-            all_count_images = generate_posters(arts, f'{ready_path}/Постеры.pdf')
+            all_count_images = generate_posters(arts, f'{ready_path}/Постеры.pdf', progress_step=progress_step,
+                                                progress_bar=progress_bar)
             return all_count_images
 
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
 
         if category == 'Наклейки 3-D':
-            return created_stickers(sorted_arts, max_folder, category)
+            return created_stickers(sorted_arts, max_folder, category, progress_step=progress_step,
+                                    progress_bar=progress_bar)
         else:
             directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
             os.makedirs(directory, exist_ok=True)
@@ -186,7 +200,8 @@ def create_folder_order(articles, name_doc, list_model):
                 arts = sorted_arts
             if category == 'Попсокеты ДП':
                 combine_images_to_pdf(arts, f'{ready_path}/{category}_{brand}.pdf', size=category,
-                                      A3_flag=A3_flag, category=category)
+                                      A3_flag=A3_flag, category=category, progress_step=progress_step,
+                                      progress_bar=progress_bar)
             for index, article in enumerate(arts):
                 image_paths = article.images.split(';')
                 if target_size == 1:
@@ -225,6 +240,7 @@ def create_folder_order(articles, name_doc, list_model):
                     except Exception as ex:
                         logger.error(image_path)
                         logger.error(ex)
+                update_progres_bar(progress_bar, progress_step)
 
         return all_count_images
 
@@ -315,8 +331,8 @@ def create_folder_order(articles, name_doc, list_model):
             all_images_count += copy_files_folder(arts=value['arts'],
                                                   max_folder=value['max_folder'],
                                                   target_size=value['target_size'],
-                                                  category=cat, list_model=list_model)
-
+                                                  category=cat)
+    progress_bar.setValue(100)
     return all_images_count, categories_dict
 
 

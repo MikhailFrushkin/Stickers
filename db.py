@@ -26,7 +26,7 @@ class Article(Model):
     sticker = CharField(verbose_name='Путь к Шк', null=True)
     barcode = CharField(verbose_name='Баркод', null=True)
 
-    one_pdf = CharField(verbose_name='Путь к объединенному пдф', null=True)
+    union_file = CharField(verbose_name='Путь к объединенному файлу', null=True)
     blur_images = TextField(verbose_name='Пути в файлам c блюром', null=True)
 
     created_at = DateTimeField(verbose_name='Время создания', default=datetime.now)
@@ -45,7 +45,7 @@ class Article(Model):
     @classmethod
     def create_art(cls, folder, art, quantity, size, category, brand, updated_at_in_site):
         from main import config_prog
-        one_pdf = None
+        union_file = None
         blur_images = None
         sticker = None
         skin = None
@@ -75,8 +75,6 @@ class Article(Model):
                 elif 'подложка' in filename:
                     skin = file_path
         images = ';'.join(image_filenames)
-        'NAKLEYKAKARTA-BMW_М5-UV-1'
-        'NAKLEYKAKARTA-BMW_5-UV-1'
         if image_blur_filenames:
             blur_images = ';'.join(image_blur_filenames)
 
@@ -91,9 +89,9 @@ class Article(Model):
             logger.warning(f'Нет шк: {art}')
         article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
                              brand=brand, quantity=quantity, size=size, sticker=sticker, skin=skin,
-                             updated_at_in_site=updated_at_in_site, one_pdf=one_pdf,
+                             updated_at_in_site=updated_at_in_site, union_file=union_file,
                              images=images, images_in_folder=images_in_folder, blur_images=blur_images)
-        logger.success(f'В базу добавлен артикул: {art}')
+        print(f'В базу добавлен артикул: {art}')
 
         return article
 

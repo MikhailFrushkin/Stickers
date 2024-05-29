@@ -1,7 +1,5 @@
 import os
 import re
-from dataclasses import dataclass
-from typing import Optional
 
 import pandas as pd
 from loguru import logger
@@ -30,6 +28,12 @@ def replace_bad_simbols(row: str) -> str:
     bad = r'[\?\/\\\:\*\"><\|]'
     new_row = re.sub(bad, '', row)
     return new_row
+
+
+def update_progres_bar(progress_bar, progress_step):
+    current_value = progress_bar.value()
+    new_value = current_value + progress_step
+    progress_bar.setValue(int(new_value))
 
 
 def split_row(row: str) -> list:
@@ -73,3 +77,17 @@ def mm_to_points(mm):
     inches = mm / 254
     points = inches * 72
     return points
+
+
+def mm_to_px(mm):
+    return mm * 2.83465
+
+
+def mm_to_mm(px):
+    return px / 2.83465
+
+
+# Функция для извлечения числовой части из имени файла
+def extract_number(filename):
+    match = re.search(r'(\d+)(?=\.\w+$)', filename)
+    return int(match.group(1)) if match else 0

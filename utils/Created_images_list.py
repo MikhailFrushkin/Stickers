@@ -11,13 +11,13 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from config import ready_path
-from utils.utils import mm_to_points
+from utils.utils import mm_to_points, update_progres_bar
 
 pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf'))
 Image.MAX_IMAGE_PIXELS = None
 
 
-def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category):
+def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category, progress_step, progress_bar):
     """Создание файла с наклейками"""
     bad_skin_list = []
     x_offset = 20
@@ -68,8 +68,7 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category):
                     c.drawImage(img.skin, x - 10, y - img_height - 5, width=img_width, height=img_height)
                 except Exception as ex:
                     logger.error(f"Не удалось добавить подложку для {img.art} {ex}")
-            c.showPage()
-
+            update_progres_bar(progress_bar, progress_step)
         c.save()
     else:
         try:
@@ -104,7 +103,7 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category):
                             except Exception as ex:
                                 logger.error(f"Не удалось добавить подложку для {img.art} {ex} 2й раз")
                                 bad_skin_list.append(img.art)
-
+                    update_progres_bar(progress_bar, progress_step)
                 c.showPage()
             c.save()
         except Exception as ex:
@@ -254,7 +253,7 @@ def distribute_images(queryset, size, category, a3_flag, count, list_model) -> t
     return sets_of_orders, count, sum_image, sum_lists
 
 
-def create_contact_sheet(images, size, name_doc, category, A3_flag=False):
+def create_contact_sheet(images, size, name_doc, category, A3_flag):
     border_color = (0, 0, 0, 255)  # Черный цвет рамки
     border_width = 1  # Ширина рамки в пикселях
     folder = f'{ready_path}/{category}/{size}'
