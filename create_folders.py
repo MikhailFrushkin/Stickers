@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 from loguru import logger
 
-from config import ready_path
+from config import ready_path, config_prog
 from utils.Created_images_list import created_good_images, combine_images_to_pdf
 from utils.Created_posters import generate_mini_posters, generate_posters
 from utils.utils import df_in_xlsx, chunk_list, update_progres_bar
@@ -306,7 +306,7 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
     for article in articles:
         if article.category == 'Наклейки 3-D':
             categories_dict['Наклейки 3-D']['arts'].append(article)
-        elif article.brand == 'Дочке понравилось' and article.size == '25':
+        elif article.size == '25' and article.category == 'Попсокеты':
             categories_dict['Попсокеты ДП']['arts'].append(article)
         elif article.category == 'Наклейки квадратные':
             categories_dict['Наклейки квадратные']['arts'].append(article)
@@ -343,7 +343,7 @@ def find_files_in_directory(directory, file_list):
 
     for file in os.listdir(directory):
         if os.path.isfile(os.path.join(directory, file)):
-            file_name = re.sub(r'(_[1-5]|\.pdf)', '', file, flags=re.IGNORECASE).lower().strip()
+            file_name = re.sub(r'(\.pdf)', '', file, flags=re.IGNORECASE).lower().strip()
             file_dict[file_name] = os.path.join(directory, file)
 
     for poster in file_list:
@@ -357,7 +357,6 @@ def find_files_in_directory(directory, file_list):
 
 def merge_pdfs_stickers(arts_paths, output_path):
     pdf_writer = PyPDF2.PdfWriter()
-    arts_paths.reverse()
     for index, input_path in enumerate(arts_paths, start=1):
         try:
             with open(input_path, 'rb') as pdf_file:
@@ -387,7 +386,9 @@ def create_bad_arts(arts, name_doc, version):
     df_not_found = pd.DataFrame(arts, columns=['Артикул'])
     try:
         if len(df_not_found) > 0:
-            df_in_xlsx(df_not_found, f'Не найденные {name_doc} v.{version}', directory='Заказ')
+            df_in_xlsx(df_not_found, f'Не найденные {name_doc} '
+                                     f'{config_prog.params.get("machin_name", "Не назван комп")} v.{version}',
+                       directory='Заказ')
     except Exception as ex:
         logger.error(ex)
 

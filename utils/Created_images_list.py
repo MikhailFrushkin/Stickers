@@ -34,9 +34,13 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category, progr
             else:
                 list_skins.append(i)
     # Размер подложки
-    if input_arts[0].brand == 'Дочке понравилось':
-        img_width = mm_to_points(600)
-        img_height = mm_to_points(800)
+    images_per_page = 9
+    num_row = 3
+    size_font = 8
+    if category == 'Попсокеты ДП':
+        img_width = mm_to_points(450)
+        img_height = mm_to_points(600)
+        size_font = 6
     else:
         img_width = (A4[0] - 2 * x_offset) / 3
         img_height = (A4[1] - 2 * y_offset) / 3 - 5
@@ -79,7 +83,7 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category, progr
                            A4[1] - y_offset - 2 * (img_height + 10)]
 
             total_images = len(list_skins)
-            images_per_page = 9
+
             num_pages = (total_images + images_per_page - 1) // images_per_page
 
             for page in range(num_pages):
@@ -89,9 +93,9 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category, progr
                     if not os.path.exists(img.skin):
                         logger.debug(f'{img.skin} не существует')
                     else:
-                        x = x_positions[i % 3]
-                        y = y_positions[i // 3]
-                        c.setFont("Helvetica-Bold", 8)
+                        x = x_positions[i % num_row]
+                        y = y_positions[i // num_row]
+                        c.setFont("Helvetica-Bold", size_font)
                         c.drawString(x, y + 2, f"#{img.art}")
                         try:
                             logger.success(f"Добавилась подложка {img.art}")
@@ -126,7 +130,7 @@ def combine_images_to_pdf(input_arts, output_pdf, size, A3_flag, category, progr
     return bad_skin_list
 
 
-def write_images_art(image, category,  text):
+def write_images_art(image, category, text):
     """Нанесения номера на значке"""
     width, height = image.size
     draw = ImageDraw.Draw(image)
@@ -301,7 +305,8 @@ def create_contact_sheet(images, size, name_doc, category, A3_flag):
                                 border_rect = [j * image_width + 100, i * image_height + 100 * (i + 1),
                                                (j + 1) * image_width + 100, (i + 1) * image_height + 100 * (i + 1)]
                             else:
-                                contact_sheet.paste(image, (j * image_width + 100 * 2, i * image_height + 100 * (i + 1)))
+                                contact_sheet.paste(image,
+                                                    (j * image_width + 100 * 2, i * image_height + 100 * (i + 1)))
                                 border_rect = [j * image_width + 100 * 2, i * image_height + 100 * (i + 1),
                                                (j + 1) * image_width + 100 * 2, (i + 1) * image_height + 100 * (i + 1)]
 
@@ -341,7 +346,8 @@ def created_good_images(records, category, size, name_doc, A3_flag, list_model):
     sum_image = 0
     try:
         count = 1
-        sets_of_orders, count, sum_image, sum_lists = distribute_images(records, size, category, A3_flag, count, list_model)
+        sets_of_orders, count, sum_image, sum_lists = distribute_images(records, size, category, A3_flag, count,
+                                                                        list_model)
 
         try:
             create_contact_sheet(sets_of_orders, size, name_doc, category, A3_flag)
