@@ -131,8 +131,8 @@ def main_download_site(category, config, self):
     art_list = get_arts_in_base(category)
     data = get_products(category)
 
-    logger.debug(f'Артикулов в базе:{len(art_list)}')
-    logger.debug(f'Артикулов в ответе с сервера:{len(data)}')
+    logger.info(f'Артикулов в базе:{len(art_list)}')
+    logger.info(f'Артикулов в ответе с сервера:{len(data)}')
 
     data = [item for item in data if item['art'].upper() not in art_list]
     logger.success(f'Артикулов для загрузки:{len(data)}')
@@ -172,7 +172,6 @@ def main_download_site(category, config, self):
                     if os.path.exists(folder):
                         logger.warning(f'Файлы артикула существуют {art}, но будут обновлены!')
                         shutil.rmtree(folder, ignore_errors=True)
-
                     os.makedirs(folder, exist_ok=True)
                 except Exception as ex:
                     logger.error(ex)

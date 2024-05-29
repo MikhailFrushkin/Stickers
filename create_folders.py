@@ -10,7 +10,7 @@ from loguru import logger
 
 from config import ready_path
 from utils.Created_images_list import created_good_images, combine_images_to_pdf
-from utils.Created_posters import generate_posters
+from utils.Created_posters import generate_mini_posters, generate_posters
 from utils.utils import df_in_xlsx, chunk_list
 
 
@@ -143,6 +143,7 @@ def created_stickers(arts, max_folder, category):
 def create_folder_order(articles, name_doc, list_model):
     from main import config_prog
     def copy_files_folder(arts, max_folder, target_size, category, list_model):
+        logger.warning(f'Создание {category}')
         A3_flag = False
         brand = arts[0].brand
 
@@ -167,17 +168,20 @@ def create_folder_order(articles, name_doc, list_model):
                                       A3_flag=A3_flag, category=category)
 
             return all_count_images
-        elif category =='Мини постеры':
-            logger.warning('Создание мини постеров')
-            all_count_images = generate_posters(arts, f'{ready_path}/Мини постеры.pdf')
+        elif category == 'Мини постеры':
+            all_count_images = generate_mini_posters(arts, f'{ready_path}/Мини постеры.pdf')
+            return all_count_images
+        elif category == 'Постеры':
+            all_count_images = generate_posters(arts, f'{ready_path}/Постеры.pdf')
             return all_count_images
 
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
-        # directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
-        # os.makedirs(directory, exist_ok=True)
+
         if category == 'Наклейки 3-D':
             return created_stickers(sorted_arts, max_folder, category)
         else:
+            directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{dir_count}')
+            os.makedirs(directory, exist_ok=True)
             if category == 'Наклейки квадратные':
                 arts = sorted_arts
             if category == 'Попсокеты ДП':
@@ -271,6 +275,11 @@ def create_folder_order(articles, name_doc, list_model):
             'max_folder': 10_000,
             'target_size': 1
         },
+        'Постеры': {
+            'arts': [],
+            'max_folder': 10_000,
+            'target_size': 1
+        },
         'other_articles': {
             'arts': [],
             'max_folder': 1000,
@@ -295,6 +304,8 @@ def create_folder_order(articles, name_doc, list_model):
             categories_dict['Зеркальца']['arts'].append(article)
         elif article.category == 'Мини постеры':
             categories_dict['Мини постеры']['arts'].append(article)
+        elif article.category == 'Постеры':
+            categories_dict['Постеры']['arts'].append(article)
         else:
             categories_dict['other_articles']['arts'].append(article)
     all_images_count = 0
@@ -350,7 +361,7 @@ def create_order_shk(arts, name_doc):
     found_files_stickers, not_found_stickers = find_files_in_directory(config_prog.params.get('Путь к шк'), arts)
     if found_files_stickers:
         merge_pdfs_stickers(found_files_stickers, f'Заказ\\!ШК {name_doc}')
-        logger.debug(f'{name_doc} ШК сохранены!')
+        logger.success(f'{name_doc} ШК сохранены!')
     else:
         logger.error(f'{name_doc} ШК не найдены!')
     return not_found_stickers

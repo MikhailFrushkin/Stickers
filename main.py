@@ -243,7 +243,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     arts = value["arts"]
                     total_quantity = sum(article.quantity for article in arts)
                     mess += f'\n{cat}\nАртикулов: {len(arts)}\tкол-во: {total_quantity if cat != "Зеркальца" else total_quantity * 2}\n'
-                    if cat == 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты' and cat != 'Мини постеры':
+                    if (cat == 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты' and cat != 'Мини постеры'
+                            and cat != 'Постеры'):
                         try:
                             shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
                                          os.path.join(config_prog.current_dir, 'Заказ'))
@@ -333,10 +334,12 @@ class UpdateDatabaseThread(QThread):
             categories_list.append('Зеркальца')
         if check_group['Мини постеры']:
             categories_list.append('Мини постеры')
-
+        if check_group['Постеры']:
+            categories_list.append('Постеры')
         if categories_list:
             for item in categories_list:
                 try:
+                    logger.warning(f'Обновление: {item}')
                     main_download_site(category=item, config=config_prog, self=self)
                 except Exception as ex:
                     logger.error(ex)
@@ -344,29 +347,13 @@ class UpdateDatabaseThread(QThread):
         self.progress_updated.emit(100, 100)
         self.update_progress_message.emit('Обновление', 100, 100)
 
-        # Обновление шк
-        # try:
-        #     self.progress_updated.emit(0, 100)
-        #     self.update_progress_message.emit('Поиск шк', 0, 100)
-        #     loop = asyncio.new_event_loop()
-        #     asyncio.set_event_loop(loop)
-        #     try:
-        #         logger.debug('Поиск шк на яндекс диске')
-        #         main_search_sticker(config_prog)
-        #     except Exception as ex:
-        #         logger.error(ex)
-        #     self.progress_updated.emit(100, 100)
-        #     self.update_progress_message.emit('Поиск шк', 100, 100)
-        # except Exception as ex:
-        #     logger.error(ex)
-        #
         try:
             self.progress_updated.emit(0, 100)
             self.update_progress_message.emit('Поиск шк на CRM', 0, 100)
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             try:
-                logger.debug('Поиск шк на дискe CRM')
+                logger.warning('Поиск шк на дискe CRM')
                 main_search_sticker(config_prog, folder_path='/Новая база (1)')
             except Exception as ex:
                 logger.error(ex)

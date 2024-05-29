@@ -82,8 +82,13 @@ class Article(Model):
 
         images_in_folder = len(image_filenames)
         if len(image_filenames) != quantity:
-            logger.error(f'не совпадает кол-во: {art}')
+            logger.error(f'Не совпадает кол-во: {art}')
             return
+        if not skin:
+            logger.error(f'Нет подложки: {art}')
+            return
+        if not sticker:
+            logger.warning(f'Нет шк: {art}')
         article = cls.create(art=art, folder=os.path.abspath(folder), category=category,
                              brand=brand, quantity=quantity, size=size, sticker=sticker, skin=skin,
                              updated_at_in_site=updated_at_in_site, one_pdf=one_pdf,
