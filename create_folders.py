@@ -41,18 +41,18 @@ def copy_image_files(filled_list, directory, count, count_images, all_count_imag
     return count, count_images, all_count_images
 
 
-def add_random_images(images_list):
+def add_random_images(images_list, k=3):
     unique_elements = list(set(images_list))
 
     # Если уникальных элементов меньше трех, берем все
-    if len(unique_elements) < 3:
+    if len(unique_elements) < k:
         unique_random_elements = list(unique_elements)
         # Дополнение до трех элементов из повторяющихся
-        while len(unique_random_elements) < 3:
+        while len(unique_random_elements) < k:
             random_element = random.choice(images_list)
             unique_random_elements.append(random_element)
     else:
-        unique_random_elements = random.sample(unique_elements, 3)
+        unique_random_elements = random.sample(unique_elements, k)
     return unique_random_elements
 
 
@@ -82,34 +82,24 @@ def copy_images_number(arts_number, number, max_folder, category, all_count_imag
                                                                      all_count_images)
         update_progres_bar(progress_bar, progress_step)
 
-    elif number == 6:
-        for article in arts_number:
-            filled_list = []
-            image_paths = article.images.split(';')
-            filled_list.extend(image_paths * 2)
-            random_elements = add_random_images(filled_list)
-            filled_list.extend(random_elements)
-
-            if count_images + len(filled_list) > max_folder:
-                dir_count += 1
-                directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{number}шт._{dir_count}')
-                os.makedirs(directory, exist_ok=True)
-                count_images = 0
-
-            count, count_images, all_count_images = copy_image_files(filled_list, directory, count, count_images,
-                                                                     all_count_images)
-            update_progres_bar(progress_bar, progress_step)
-
-    elif number == 2:
-        chunk_list_number_6 = chunk_list(arts_number, 3)
+    elif number == 6 or number == 2:
+        if number == 2:
+            multiplication_images_num = 2
+        else:
+            multiplication_images_num = 1
+        chunk_list_number_6 = chunk_list(arts_number, 2)
         for chunk in chunk_list_number_6:
             filled_list = []
             for item in chunk:
                 image_paths = item.images.split(';')
-                filled_list.extend(image_paths * (6 // len(chunk)))
+                filled_list.extend(image_paths * (multiplication_images_num))
             random_elements = add_random_images(filled_list)
             filled_list.extend(random_elements)
-
+            if len(filled_list) != 15:
+                dop_random = 15 - len(filled_list)
+                if dop_random > 0:
+                    random_elements = add_random_images(filled_list, dop_random)
+                    filled_list.extend(random_elements)
             if count_images + len(filled_list) > max_folder:
                 dir_count += 1
                 directory = os.path.join(config_prog.current_dir, 'Заказ', f'{category}_{number}шт._{dir_count}')
