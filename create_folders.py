@@ -1,3 +1,5 @@
+import asyncio
+import datetime
 import os
 import random
 import re
@@ -170,8 +172,11 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
 
             return all_count_images
         elif category == 'Мини постеры':
-            all_count_images = generate_mini_posters(arts, f'{ready_path}/Мини постеры.pdf',
-                                                     progress_step=progress_step, progress_bar=progress_bar)
+            start = datetime.datetime.now()
+
+            all_count_images = asyncio.run(generate_mini_posters(arts, f'{ready_path}/Мини постеры.pdf',
+                                                     progress_step=progress_step, progress_bar=progress_bar))
+            logger.success(datetime.datetime.now() - start)
             return all_count_images
         elif category == 'Постеры':
             all_count_images = generate_posters(arts, f'{ready_path}/Постеры.pdf', progress_step=progress_step,
@@ -215,7 +220,8 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
                 for index_img, image_path in enumerate(filled_list):
                     try:
                         exp = os.path.splitext(os.path.basename(image_path))[1]
-                        if category == 'Наклейки на карту' and article.quantity == 2:
+                        if ((category == 'Наклейки на карту' or category == 'Наклейки на карту 15 шт.')
+                                and article.quantity == 2):
                             if index_img == 1:
                                 new_filename = f"{count}_duo{exp}"
                             else:
@@ -266,6 +272,12 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             'target_size': 1
 
         },
+        'Наклейки на карту 15 шт.': {
+            'arts': [],
+            'max_folder': 15,
+            'target_size': 1
+
+        },
         'Брелки': {
             'arts': [],
             'max_folder': None,
@@ -302,6 +314,7 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             categories_dict['Наклейки квадратные']['arts'].append(article)
         elif article.category == 'Наклейки на карту':
             categories_dict['Наклейки на карту']['arts'].append(article)
+            categories_dict['Наклейки на карту 15 шт.']['arts'].append(article)
         elif article.category == 'Брелки':
             categories_dict['Брелки']['arts'].append(article)
         elif article.category == 'Попсокеты':
