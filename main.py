@@ -242,7 +242,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     total_quantity = sum(article.quantity for article in arts)
                     mess += f'\n{cat}\nАртикулов: {len(arts)}\tкол-во: {total_quantity if cat != "Зеркальца" else total_quantity * 2}\n'
                     if (cat != 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты' and cat != 'Мини постеры'
-                            and cat != 'Постеры'):
+                            and cat != 'Постеры' and cat != 'Маски' and cat != 'Кружки'):
                         try:
                             shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
                                          os.path.join(config_prog.current_dir, 'Заказ'))
@@ -316,7 +316,7 @@ class UpdateDatabaseThread(QThread):
         check_group = config_prog.params[
             'categories'
         ]
-
+        download_union_list = False
         categories_list = []
         if check_group['3D наклейки']:
             categories_list.append('Наклейки 3-D')
@@ -334,11 +334,17 @@ class UpdateDatabaseThread(QThread):
             categories_list.append('Мини постеры')
         if check_group['Постеры']:
             categories_list.append('Постеры')
+        if check_group['Кружки']:
+            categories_list.append(['Кружки', 'Кружки-сердечко'])
+        if check_group['Маски']:
+            categories_list.append('Маски')
+            download_union_list = True
         if categories_list:
             for item in categories_list:
                 try:
                     logger.warning(f'Обновление: {item}')
-                    main_download_site(category=item, config=config_prog, self=self)
+                    main_download_site(category=item, config=config_prog, self=self,
+                                       download_union_list=download_union_list)
                 except Exception as ex:
                     logger.error(ex)
 

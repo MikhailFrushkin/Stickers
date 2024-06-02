@@ -12,6 +12,8 @@ from loguru import logger
 
 from config import ready_path, config_prog
 from utils.Created_images_list import created_good_images, combine_images_to_pdf
+from utils.Created_kruzhka import created_lists_orders_kruzhka
+from utils.Created_maski import created_maski
 from utils.Created_posters import generate_mini_posters, generate_posters
 from utils.utils import df_in_xlsx, chunk_list, update_progres_bar
 
@@ -173,12 +175,21 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             return all_count_images
         elif category == 'Мини постеры':
             all_count_images = asyncio.run(generate_mini_posters(arts, f'{ready_path}/Мини постеры.pdf',
-                                                     progress_step=progress_step, progress_bar=progress_bar))
+                                                                 progress_step=progress_step,
+                                                                 progress_bar=progress_bar))
             return all_count_images
         elif category == 'Постеры':
             all_count_images = generate_posters(arts, f'{ready_path}/Постеры.pdf', progress_step=progress_step,
                                                 progress_bar=progress_bar)
             return all_count_images
+
+        elif category == 'Кружки':
+            return created_lists_orders_kruzhka(arts, max_folder, category, progress_step=progress_step,
+                                                progress_bar=progress_bar)
+
+        elif category == 'Маски':
+            return created_maski(arts, max_folder, category, progress_step=progress_step,
+                                 progress_bar=progress_bar)
 
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
 
@@ -295,6 +306,16 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             'max_folder': 10_000,
             'target_size': 1
         },
+        'Кружки': {
+            'arts': [],
+            'max_folder': 10_000,
+            'target_size': 1
+        },
+        'Маски': {
+            'arts': [],
+            'max_folder': 10_000,
+            'target_size': 1
+        },
         'other_articles': {
             'arts': [],
             'max_folder': 1000,
@@ -322,6 +343,10 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             categories_dict['Мини постеры']['arts'].append(article)
         elif article.category == 'Постеры':
             categories_dict['Постеры']['arts'].append(article)
+        elif article.category == 'Маски':
+            categories_dict['Маски']['arts'].append(article)
+        elif article.category == 'Кружки' or article.category == 'Кружки-сердечко':
+            categories_dict['Кружки']['arts'].append(article)
         else:
             categories_dict['other_articles']['arts'].append(article)
     all_images_count = 0

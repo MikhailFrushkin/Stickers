@@ -13,11 +13,14 @@ from db import Article
 from utils.blur import blur_image
 
 
-def get_products(category: str, brand_request: str | None = None):
+def get_products(category: str | list, brand_request: str | None = None):
     try:
         if not brand_request:
             url = f'{domain}/products/'
-            categories = [category]
+            if isinstance(category, list):
+                categories = category
+            else:
+                categories = [category]
             json_data = json.dumps(categories)
         else:
             url = f'{domain}/products_v2/'
@@ -34,7 +37,7 @@ def get_products(category: str, brand_request: str | None = None):
         logger.error(response.status_code)
 
 
-def get_info_publish_folder(public_url):
+def get_info_publish_folder(public_url, download_union_list=False):
     result_data = []
     res = requests.get(
         f'https://cloud-api.yandex.net/v1/disk/public/resources?public_key={public_url}&limit=1000')
@@ -47,8 +50,15 @@ def get_info_publish_folder(public_url):
             if file_name:
                 file_name = file_name.strip().lower()
 
-            if os.path.splitext(file_name)[0].isdigit() or 'подл' in file_name or file_name.endswith('.pdf'):
-                result_data.append({'name': i.get('name').strip(), 'file': i.get('file'), 'path': i.get('path')})
+                if (os.path.splitext(file_name)[0].isdigit() or 'подл' in file_name or file_name.endswith('.pdf')
+                        or file_name.endswith('.cdr')):
+                    if download_union_list:
+                        result_data.append({'name': i.get('name').strip(), 'file': i.get('file'),
+                                            'path': i.get('path')})
+                    else:
+                        if "все" not in file_name:
+                            result_data.append(
+                                {'name': i.get('name').strip(), 'file': i.get('file'), 'path': i.get('path')})
 
         for i in result_data:
             if i.get('name').endswith('.pdf'):
@@ -59,9 +69,9 @@ def get_info_publish_folder(public_url):
         return result_data, folder_name
 
 
-def create_download_data(item):
+def create_download_data(item, download_union_list):
     try:
-        url_data, folder_name = get_info_publish_folder(item['directory_url'])
+        url_data, folder_name = get_info_publish_folder(item['directory_url'], download_union_list)
         if url_data:
             item['url_data'] = url_data
             item['folder_name'] = folder_name
@@ -121,20 +131,28 @@ def copy_image(image_path, count):
         shutil.copy2(image_path, os.path.join(folder_art, f'{i + 2}.{exp}'))
 
 
-def main_download_site(category, config, self):
+def main_download_site(category: str | list, config, self, download_union_list):
     def chunk_list(lst, chunk_size):
         for i in range(0, len(lst), chunk_size):
             yield lst[i:i + chunk_size]
 
     chunk_size = 20
+    art_list = []
+    if isinstance(category, list):
+        for cat in category:
+            art_list.extend(get_arts_in_base(cat))
+        if category[0] == 'Кружки':
+            category = 'Кружки'
+    else:
+        art_list = get_arts_in_base(category)
 
-    art_list = get_arts_in_base(category)
     data = get_products(category)
 
     logger.info(f'Артикулов в базе:{len(art_list)}')
     logger.info(f'Артикулов в ответе с сервера:{len(data)}')
 
     data = [item for item in data if item['art'].upper() not in art_list]
+    data = data[:50]
     logger.success(f'Артикулов для загрузки:{len(data)}')
 
     all_arts = len(data)
@@ -149,7 +167,7 @@ def main_download_site(category, config, self):
 
         for index, item in enumerate(chunk, start=1):
             # print(f'Получение мета папки {count}/{all_arts}')
-            download_data = create_download_data(item)
+            download_data = create_download_data(item, download_union_list)
             if download_data:
                 result_download_arts.append(download_data)
             else:

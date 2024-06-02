@@ -59,6 +59,7 @@ class Article(Model):
         folder_name = os.path.abspath(folder)
         image_filenames = []
         image_blur_filenames = []
+        union_files = []
 
         for index, filename in enumerate(os.listdir(folder_name), start=1):
             file_path = os.path.join(folder_name, filename)
@@ -74,9 +75,13 @@ class Article(Model):
                     image_filenames.append(file_path)
                 elif 'подложка' in filename:
                     skin = file_path
+                elif 'все' in filename or 'макет' in filename:
+                    union_files.append(file_path)
         images = ';'.join(image_filenames)
         if image_blur_filenames:
             blur_images = ';'.join(image_blur_filenames)
+        if union_files:
+            union_file = ';'.join(union_files)
 
         images_in_folder = len(image_filenames)
         if len(image_filenames) != quantity:
