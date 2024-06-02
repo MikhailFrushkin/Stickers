@@ -15,7 +15,7 @@ def created_maski(arts, max_folder, category, progress_step, progress_bar):
     output_path = f'{ready_path}\\{category}'
     os.makedirs(output_path, exist_ok=True)
     for index, article in enumerate(arts, start=1):
-        image_list_art = article.images.split(';')
+        image_list_art = article.union_file.split(';')
         for index2, file in enumerate(image_list_art, start=1):
             if len(image_list_art) == 1:
                 new_name = f"{index}. {article.art}.cdr"

@@ -152,7 +152,7 @@ def main_download_site(category: str | list, config, self, download_union_list):
     logger.info(f'Артикулов в ответе с сервера:{len(data)}')
 
     data = [item for item in data if item['art'].upper() not in art_list]
-    data = data[:50]
+    data = data[:200]
     logger.success(f'Артикулов для загрузки:{len(data)}')
 
     all_arts = len(data)
