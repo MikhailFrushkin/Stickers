@@ -172,11 +172,8 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
 
             return all_count_images
         elif category == 'Мини постеры':
-            start = datetime.datetime.now()
-
             all_count_images = asyncio.run(generate_mini_posters(arts, f'{ready_path}/Мини постеры.pdf',
                                                      progress_step=progress_step, progress_bar=progress_bar))
-            logger.success(datetime.datetime.now() - start)
             return all_count_images
         elif category == 'Постеры':
             all_count_images = generate_posters(arts, f'{ready_path}/Постеры.pdf', progress_step=progress_step,

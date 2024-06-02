@@ -1,10 +1,23 @@
 import os
 import re
+import time
 
 import pandas as pd
 from loguru import logger
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+
+
+def timer(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        execution_time = end_time - start_time
+        logger.success(f"Время выполнения функции {func.__name__}: {round(execution_time, 2)} сек.")
+        return result
+
+    return wrapper
 
 
 def chunk_list(lst, chunk_size=4):

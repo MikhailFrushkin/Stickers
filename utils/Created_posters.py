@@ -1,21 +1,14 @@
+import asyncio
 import io
-import os
-import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor
-import asyncio
-import aiofiles
-from PIL import Image
-import io
-import fitz  # PyMuPDF
-import logging
-from concurrent.futures import ProcessPoolExecutor
+
 from PIL import Image
 from loguru import logger
 from reportlab.lib.pagesizes import A3, A6
 from reportlab.pdfgen import canvas
 
-from utils.utils import mm_to_px, extract_number, update_progres_bar
+from utils.utils import mm_to_px, extract_number, update_progres_bar, timer
 
 
 def process_image_sync(image_path, adjusted_a6_width, adjusted_a6_height):
@@ -37,6 +30,7 @@ def process_image_sync(image_path, adjusted_a6_width, adjusted_a6_height):
         logger.error(f"Ошибка обработки изображения {image_path}: {e}")
         return None
 
+
 async def generate_mini_posters(articles, output_file, progress_step, progress_bar):
     a6_width, a6_height = A6
     gap_mm = 2
@@ -48,7 +42,7 @@ async def generate_mini_posters(articles, output_file, progress_step, progress_b
     pdf_file = canvas.Canvas(output_file, pagesize=A3)
     image_index = 0
     total_images = 0
-    batch_size = 10  # Количество изображений в одном пакете
+    batch_size = 5  # Количество изображений в одном пакете
     image_cache = {}
 
     loop = asyncio.get_event_loop()
@@ -56,10 +50,13 @@ async def generate_mini_posters(articles, output_file, progress_step, progress_b
         for article in articles:
             image_list_art = article.images.split(';')
             image_list_sorted = sorted(image_list_art, key=extract_number)
-            batched_image_list = [image_list_sorted[i:i + batch_size] for i in range(0, len(image_list_sorted), batch_size)]
+            batched_image_list = [image_list_sorted[i:i + batch_size] for i in
+                                  range(0, len(image_list_sorted), batch_size)]
 
             for batch in batched_image_list:
                 futures = []
+                # list_display = '\n'.join(batch)
+                # logger.info(f"{list_display}")
 
                 for image_path in batch:
                     if image_path in image_cache:
@@ -89,6 +86,101 @@ async def generate_mini_posters(articles, output_file, progress_step, progress_b
 
     pdf_file.save()
     return total_images
+
+
+def process_image_sync_a3(image_path):
+    try:
+        with open(image_path, 'rb') as file:
+            img_data = file.read()
+        img = Image.open(io.BytesIO(img_data))
+        width, height = img.size
+        if width > height:
+            img = img.rotate(90, expand=True)
+        return img
+    except Exception as e:
+        logger.error(f"Ошибка обработки изображения {image_path}: {e}")
+        return None
+
+
+def generate_posters(articles, output_file, progress_step, progress_bar):
+    image_cache = {}  # Кеш для изображений
+    temp_file_cache = {}  # Кеш для временных файлов
+    total_img = sum(len(article.images.split(';')) for article in articles)
+    try:
+        c = canvas.Canvas(output_file, pagesize=A3)
+        for article in articles:
+            image_list_art = article.images.split(';')
+            image_list_sorted = sorted(image_list_art, key=extract_number)
+            for i, poster_file in enumerate(image_list_sorted):
+                # logger.debug(poster_file)
+                if poster_file in image_cache:
+                    image = image_cache[poster_file]
+                else:
+                    image = process_image_sync_a3(poster_file)
+                    if image is not None:
+                        image_cache[poster_file] = image
+
+                if image is not None:
+                    if poster_file in temp_file_cache:
+                        temp_file_name = temp_file_cache[poster_file]
+                    else:
+                        in_memory_buffer = io.BytesIO()
+                        image = image.convert("RGB")  # Convert image to RGB to ensure compatibility with JPEG format
+                        image.save(in_memory_buffer, format='JPEG', quality=100)  # Save with minimal compression
+                        in_memory_buffer.seek(0)
+                        img_data = in_memory_buffer.getvalue()
+                        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+                            temp_file.write(img_data)
+                            temp_file_name = temp_file.name
+                        temp_file_cache[poster_file] = temp_file_name
+
+                    c.drawImage(temp_file_name, 0, 0, width=A3[0], height=A3[1])
+
+                # Ensure a new page for each image
+                c.showPage()
+            update_progres_bar(progress_bar, progress_step)
+        c.save()
+    except Exception as ex:
+        logger.error(ex)
+    return total_img
+#
+# def generate_posters(articles, output_file, progress_step, progress_bar):
+#     image_list = []
+#     for article in articles:
+#         image_list_art = article.images.split(';')
+#         image_list_sorted = sorted(image_list_art, key=extract_number)
+#         image_list.extend(image_list_sorted)
+#
+#     total_img = len(image_list)
+#     try:
+#         c = canvas.Canvas(output_file, pagesize=A3)
+#         for article in articles:
+#             image_list_art = article.images.split(';')
+#             image_list_sorted = sorted(image_list_art, key=extract_number)
+#             for i, poster_file in enumerate(image_list_sorted):
+#                 logger.debug(poster_file)
+#                 image = Image.open(poster_file)
+#                 width, height = image.size
+#                 if width > height:
+#                     rotated_image = image.rotate(90, expand=True)
+#                     try:
+#                         with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
+#                             rotated_image.save(temp_file.name, format='JPEG')
+#                             c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
+#                     except Exception as ex:
+#                         logger.error(ex)
+#                         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+#                             rotated_image.save(temp_file.name, format='PNG')
+#                             c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
+#                 else:
+#                     c.drawImage(poster_file, 0, 0, width=A3[0], height=A3[1])
+#                 if i != total_img - 1:
+#                     c.showPage()
+#             update_progres_bar(progress_bar, progress_step)
+#         c.save()
+#     except Exception as ex:
+#         logger.error(ex)
+#     return total_img
 
 #
 # def process_image_sync(image_path, adjusted_a6_width, adjusted_a6_height):
@@ -274,42 +366,3 @@ async def generate_mini_posters(articles, output_file, progress_step, progress_b
 #
 #     pdf_file.save()
 #     return total_images
-
-
-def generate_posters(articles, output_file, progress_step, progress_bar):
-    image_list = []
-    for article in articles:
-        image_list_art = article.images.split(';')
-        image_list_sorted = sorted(image_list_art, key=extract_number)
-        image_list.extend(image_list_sorted)
-
-    total_img = len(image_list)
-    try:
-        c = canvas.Canvas(output_file, pagesize=A3)
-        for article in articles:
-            image_list_art = article.images.split(';')
-            image_list_sorted = sorted(image_list_art, key=extract_number)
-            for i, poster_file in enumerate(image_list_sorted):
-                logger.debug(poster_file)
-                image = Image.open(poster_file)
-                width, height = image.size
-                if width > height:
-                    rotated_image = image.rotate(90, expand=True)
-                    try:
-                        with tempfile.NamedTemporaryFile(suffix='.jpg', delete=False) as temp_file:
-                            rotated_image.save(temp_file.name, format='JPEG')
-                            c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
-                    except Exception as ex:
-                        logger.error(ex)
-                        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-                            rotated_image.save(temp_file.name, format='PNG')
-                            c.drawImage(temp_file.name, 0, 0, width=A3[0], height=A3[1])
-                else:
-                    c.drawImage(poster_file, 0, 0, width=A3[0], height=A3[1])
-                if i != total_img - 1:
-                    c.showPage()
-            update_progres_bar(progress_bar, progress_step)
-        c.save()
-    except Exception as ex:
-        logger.error(ex)
-    return total_img
