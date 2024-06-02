@@ -362,21 +362,19 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
 
 
 def find_files_in_directory(directory, file_list):
-    file_dict = {}
     found_files = []
     not_found_files = []
-
+    sticker_dict = {}
     for file in os.listdir(directory):
-        if os.path.isfile(os.path.join(directory, file)):
-            file_name = re.sub(r'(\.pdf)', '', file, flags=re.IGNORECASE).lower().strip()
-            file_dict[file_name] = os.path.join(directory, file)
+        file_name = os.path.splitext(file)[0].lower().strip()
+        sticker_dict[file_name] = os.path.join(directory, file)
 
-    for poster in file_list:
-        file_name = poster.lower().strip()
-        if file_name in file_dict:
-            found_files.append(file_dict[file_name])
+    for art in file_list:
+        file_name = art.lower().strip()
+        if file_name in sticker_dict:
+            found_files.append(sticker_dict[file_name])
         else:
-            not_found_files.append(poster)
+            not_found_files.append(art)
     return found_files, not_found_files
 
 
