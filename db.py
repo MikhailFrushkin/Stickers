@@ -54,6 +54,7 @@ class Article(Model):
         # art = remove_russian_letters(art).upper()
         existing_article = cls.get_or_none(art=art, category=category, brand=brand)
         if existing_article:
+
             return existing_article
 
         folder_name = os.path.abspath(folder)
@@ -71,9 +72,9 @@ class Article(Model):
                         shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
                 elif 'blur' in filename:
                     image_blur_filenames.append(file_path)
-                elif os.path.splitext(filename)[0].isdigit():
+                elif os.path.splitext(filename)[0].isdigit() or 'принт' in filename:
                     image_filenames.append(file_path)
-                elif 'подложка' in filename:
+                elif 'подложка' in filename or ('кружка' in filename and '1' in filename):
                     skin = file_path
                 elif 'все' in filename or 'макет' in filename:
                     union_files.append(file_path)
@@ -101,7 +102,7 @@ class Article(Model):
         return article
 
     @classmethod
-    def delete_by_art(cls, art, category, brand):
+    def delete_by_art(cls, art):
         """
         Удаляет запись из базы данных по артикулу и соответствующую папку на диске.
         :param art: Артикул записи, которую нужно удалить.
@@ -109,12 +110,12 @@ class Article(Model):
         """
         # Найти запись с заданным артикулом
         try:
-            article = cls.get(cls.art == art, cls.category == category, cls.brand == brand)
+            article = cls.get(cls.art == art)
         except cls.DoesNotExist:
             return False
 
         folder_path = article.folder
-        query = cls.delete().where(cls.art == art, cls.category == category, cls.brand == brand)
+        query = cls.delete().where(cls.art == art)
         deleted = query.execute()
 
         # Если запись была успешно удалена, удалить и папку

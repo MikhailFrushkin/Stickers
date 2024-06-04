@@ -1,7 +1,7 @@
+import datetime
 import json
 import os
 import shutil
-from pprint import pprint
 
 import requests
 from loguru import logger
@@ -14,6 +14,7 @@ from utils.blur import blur_image
 
 
 def get_products(category: str | list, brand_request: str | None = None):
+    response = None
     try:
         if not brand_request:
             url = f'{domain}/products/'
@@ -34,7 +35,9 @@ def get_products(category: str | list, brand_request: str | None = None):
 
     except Exception as ex:
         logger.error(f'Ошибка в запросе по api {ex}')
-        logger.error(response.status_code)
+        if response:
+            logger.error(response.status_code)
+            logger.error(response.text)
 
 
 def get_info_publish_folder(public_url, download_union_list=False):
@@ -50,13 +53,14 @@ def get_info_publish_folder(public_url, download_union_list=False):
             if file_name:
                 file_name = file_name.strip().lower()
 
-                if (os.path.splitext(file_name)[0].isdigit() or 'подл' in file_name or file_name.endswith('.pdf')
+                if (os.path.splitext(file_name)[0].isdigit() or 'принт' in os.path.splitext(file_name)[0] or (
+                        'кружка' in file_name and '1' in file_name) or 'подл' in file_name or file_name.endswith('.pdf')
                         or file_name.endswith('.cdr')):
                     if download_union_list:
                         result_data.append({'name': i.get('name').strip(), 'file': i.get('file'),
                                             'path': i.get('path')})
                     else:
-                        if "все" not in file_name:
+                        if "все" not in file_name or 'макет' not in file_name:
                             result_data.append(
                                 {'name': i.get('name').strip(), 'file': i.get('file'), 'path': i.get('path')})
 
@@ -138,6 +142,9 @@ def main_download_site(category: str | list, config, self, download_union_list):
 
     chunk_size = 20
     art_list = []
+    download_arts = []
+    data = get_products(category)
+
     if isinstance(category, list):
         for cat in category:
             art_list.extend(get_arts_in_base(cat))
@@ -145,28 +152,40 @@ def main_download_site(category: str | list, config, self, download_union_list):
             category = 'Кружки'
     else:
         art_list = get_arts_in_base(category)
+    logger.info(f'Артикулов в базе: {len(art_list)}')
+    logger.info(f'Артикулов в ответе с сервера: {len(data)}')
+    for item in data:
+        art = item['art'].upper()
+        if art not in art_list:
+            download_arts.append(item)
+        else:
+            product = Article.get(Article.art == art)
+            str_date_item = item['updated_at']
 
-    data = get_products(category)
+            date_site = datetime.datetime.strptime(str_date_item, "%Y-%m-%dT%H:%M:%S.%fZ")
+            try:
+                if date_site > product.updated_at_in_site:
+                    product.delete_instance()
+                    download_arts.append(item)
+            except Exception as ex:
+                logger.error(ex)
+                logger.error(product)
 
-    logger.info(f'Артикулов в базе:{len(art_list)}')
-    logger.info(f'Артикулов в ответе с сервера:{len(data)}')
+    # data = [item for item in data if item['art'].upper() not in art_list]
+    # data = data[:500]
+    logger.success(f'Артикулов для загрузки: {len(download_arts)}')
 
-    data = [item for item in data if item['art'].upper() not in art_list]
-    data = data[:200]
-    logger.success(f'Артикулов для загрузки:{len(data)}')
-
-    all_arts = len(data)
+    all_arts = len(download_arts)
     count = 1
     count_download = 1
-    if not len(data):
+    if not len(download_arts):
         self.progress_updated.emit(100, 100)
         self.update_progress_message.emit('Обновление', 100, 100)
         return
-    for chunk in chunk_list(data, chunk_size):
+    for chunk in chunk_list(download_arts, chunk_size):
         result_download_arts = []
 
         for index, item in enumerate(chunk, start=1):
-            # print(f'Получение мета папки {count}/{all_arts}')
             download_data = create_download_data(item, download_union_list)
             if download_data:
                 result_download_arts.append(download_data)
@@ -183,7 +202,8 @@ def main_download_site(category: str | list, config, self, download_union_list):
                 folder_name = item['folder_name']
                 size = item['size']
 
-                updated_at_in_site = item['updated_at']
+                updated_at_in_site = datetime.datetime.strptime(item['updated_at'], "%Y-%m-%dT%H:%M:%S.%fZ")
+
                 folder = os.path.join(config.params.get('Путь к базе'), brand, category, art)
 
                 try:

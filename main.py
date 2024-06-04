@@ -10,6 +10,7 @@ from PyQt6.QtCore import QThread, pyqtSignal, QTimer, QStringListModel
 from PyQt6.QtWidgets import QProgressBar, QFileDialog, QMessageBox
 from loguru import logger
 
+from Gui.delete_art import DeleteArticleDialog
 from Gui.main_window import Ui_MainWindow
 from Gui.settings import Ui_Form
 from config import config_prog, Config
@@ -25,7 +26,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 3
+        self.version = 4.1
         self.name_doc = ''
         self.current_dir = Path.cwd()
         self.found_articles = []
@@ -46,6 +47,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # Создаем и добавляем действие для меню
         self.action.triggered.connect(self.setting_dialog)
         self.action_2.triggered.connect(self.close)
+        self.action_5.triggered.connect(self.open_delete_article_dialog)
         self.action_7.triggered.connect(self.update_db)
 
         # Ивенты на кнопки
@@ -66,6 +68,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.update_thread = UpdateDatabaseThread(parent=self)
         self.update_thread.progress_updated.connect(self.update_progress)
         self.update_thread.update_progress_message.connect(self.update_status_message)
+
+    def open_delete_article_dialog(self):
+        dialog = DeleteArticleDialog(self)
+        if dialog.exec() == QtWidgets.QDialog.DialogCode.Accepted:
+            art = dialog.line_edit.text()
+            if Article.delete_by_art(art):
+                QMessageBox.information(self, 'ВЫполнено!', 'Удаление выполнено!')
+            else:
+                QMessageBox.warning(self, 'Ошибка!', 'Ошибка удаления, проверте артикул!')
 
     def update_db(self):
         try:

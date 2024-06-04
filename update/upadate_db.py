@@ -1,3 +1,4 @@
+import datetime
 import os
 
 from db import Article
@@ -8,7 +9,8 @@ def update_db_in_folder(config_prog):
     for root, dirs, files in os.walk(directory):
         quantity = 0
         for file in files:
-            if file[0].isdigit() and not file.endswith('.pdf'):
+            filename, exp = os.path.splitext(file)
+            if (filename.isdigit() or 'принт' in filename.lower()) and not file.endswith('.pdf'):
                 quantity += 1
         if quantity:
             art = os.path.basename(root)
@@ -38,4 +40,4 @@ def update_db_in_folder(config_prog):
             else:
                 size = category
             Article.create_art(folder=root, art=art, quantity=quantity, size=size, category=category, brand=brand,
-                               updated_at_in_site=None)
+                               updated_at_in_site=datetime.datetime.now())
