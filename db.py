@@ -97,7 +97,7 @@ class Article(Model):
                              brand=brand, quantity=quantity, size=size, sticker=sticker, skin=skin,
                              updated_at_in_site=updated_at_in_site, union_file=union_file,
                              images=images, images_in_folder=images_in_folder, blur_images=blur_images)
-        print(f'В базу добавлен артикул: {art}')
+        logger.info(f'В базу добавлен артикул: {art}')
 
         return article
 
