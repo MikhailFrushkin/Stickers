@@ -3,7 +3,7 @@ from pprint import pprint
 
 import pandas as pd
 from loguru import logger
-from peewee import DoesNotExist
+from peewee import DoesNotExist, fn
 
 from db import Article
 
@@ -72,8 +72,9 @@ def read_excel_file(file: str):
         for art in arts:
             art_upper = art.upper()  # Приведение артикула из списка к верхнему регистру
             try:
-                # Пытаемся найти артикул в базе данных
-                article = Article.select().where(Article.art == art_upper).order_by(Article.updated_at_in_site).first()
+                # Пытаемся найти артикул в базе данных, игнорируя префикс "DOP_"
+                article = Article.select().where(fn.REPLACE(Article.art, "DOP_", "") == art_upper).order_by(
+                    Article.updated_at_in_site).first()
                 # Если артикул найден, добавляем его в список найденных объектов модели Article
                 if article:
                     found_articles.append(article)
@@ -88,7 +89,7 @@ def read_excel_file(file: str):
     for i in range(len(tuples_list)):
         art_upper = tuples_list[i][0].upper()
         try:
-            _ = Article.get(Article.art == art_upper)
+            _ = Article.get(fn.REPLACE(Article.art, "DOP_", "") == art_upper)
             tuples_list[i] += (True,)  # Добавление True к кортежу, если артикул найден
         except DoesNotExist:
             tuples_list[i] += (False,)
