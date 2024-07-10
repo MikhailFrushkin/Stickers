@@ -255,6 +255,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     if (cat != 'Брелки' and cat != 'Зеркальца' and cat != 'Попсокеты' and cat != 'Мини постеры'
                             and cat != 'Постеры' and cat != 'Маски' and cat != 'Кружки'):
                         try:
+                            logger.debug(f'Шаблон {cat}.cdr')
                             shutil.copy2(os.path.join(config_prog.current_dir, 'Шаблоны', f'Шаблон {cat}.cdr'),
                                          os.path.join(config_prog.current_dir, 'Заказ'))
                         except Exception as ex:

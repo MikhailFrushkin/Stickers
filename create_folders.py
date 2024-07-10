@@ -274,15 +274,21 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             'target_size': 1
 
         },
+        'Наклейки на карту 15 шт.': {
+            'arts': [],
+            'max_folder': 15,
+            'target_size': 1
+
+        },
         'Наклейки на карту': {
             'arts': [],
             'max_folder': 32,
             'target_size': 1
 
         },
-        'Наклейки на карту 15 шт.': {
+        'Наклейки квадратные 320 шт.': {
             'arts': [],
-            'max_folder': 15,
+            'max_folder': 320,
             'target_size': 1
 
         },
@@ -330,6 +336,7 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             categories_dict['Попсокеты ДП']['arts'].append(article)
         elif article.category == 'Наклейки квадратные':
             categories_dict['Наклейки квадратные']['arts'].append(article)
+            categories_dict['Наклейки квадратные 320 шт.']['arts'].append(article)
         elif article.category == 'Наклейки на карту':
             categories_dict['Наклейки на карту']['arts'].append(article)
             categories_dict['Наклейки на карту 15 шт.']['arts'].append(article)
