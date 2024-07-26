@@ -19,8 +19,8 @@ async def traverse_yandex_disk(session, folder_path, offset=0):
             data = await response.json()
             tasks = []
             for item in data["_embedded"]["items"]:
-                if item["type"] == "file" and item["name"].endswith(".pdf") and item['size'] < 30000:
-                    result_dict[item["name"].lower().strip()] = item["file"]
+                if item["type"] == "file" and item["name"].endswith(".pdf") and item['size'] < 50000:
+                    result_dict[item["name"].strip()] = item["file"]
                 elif item["type"] == "dir":
                     task = traverse_yandex_disk(session, item["path"])  # Рекурсивный вызов
                     tasks.append(task)

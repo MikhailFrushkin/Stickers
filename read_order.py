@@ -1,10 +1,8 @@
 import shutil
-from pprint import pprint
-
 import pandas as pd
 from loguru import logger
 from peewee import DoesNotExist, fn
-
+from config import config_prog
 from db import Article
 
 
@@ -28,6 +26,7 @@ def read_excel_file(file: str):
         df = df.fillna("")
 
         if len(df.columns) == 2:
+            config_prog.union_arts = True
             rows = []
             df.columns = ['артикул', 'количество']
             art_column = 'артикул'
@@ -47,6 +46,7 @@ def read_excel_file(file: str):
             # Преобразование в список кортежей
             tuples_list = counts.to_records(index=False).tolist()
         else:
+            config_prog.union_arts = False
             for i in df.columns:
                 if 'артикул продавца' in i.lower():
                     art_column = i
@@ -94,6 +94,7 @@ def read_excel_file(file: str):
         except DoesNotExist:
             tuples_list[i] += (False,)
     sorted_tuples = sorted(tuples_list, key=sort_key)
+
     return sorted_tuples, found_articles, not_found_arts, arts
 
 

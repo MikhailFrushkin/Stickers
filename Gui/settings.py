@@ -19,6 +19,7 @@ class Ui_Form(object):
         self.gridLayout.setObjectName("gridLayout")
 
         self.checkBox_texts = [
+            "Печать на Мимаки",
             "Автоматическое обновление",
             "Значки",
             "Попсокеты",
@@ -134,21 +135,6 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Настройки"))
-        # Remove or comment out the lines below
-        """
-        self.checkBox.setText(_translate("Form", "Автоматичесчкое обновление"))
-        self.checkBox_2.setText(_translate("Form", "Значки", "0"))
-        self.checkBox_4.setText(_translate("Form", "Попсокеты", "0"))
-        self.checkBox_5.setText(_translate("Form", "Зеркальца", "0"))
-        self.checkBox_3.setText(_translate("Form", "Постеры", "0"))
-        self.checkBox_6.setText(_translate("Form", "Кружки", "0"))
-        self.checkBox_11.setText(_translate("Form", "Кружки-сердечко", "0"))
-        self.checkBox_8.setText(_translate("Form", "3D наклейки", "0"))
-        self.checkBox_7.setText(_translate("Form", "Наклейки на карту", "0"))
-        self.checkBox_9.setText(_translate("Form", "Наклейки квадратные", "0"))
-        self.checkBox_10.setText(_translate("Form", "Брелки", "0"))
-        self.checkBox_12.setText(_translate("Form", "Попсокеты ДП", "0"))
-        """
         self.Label_2.setText(_translate("Form", "Частота обновления (мин.)"))
         self.Label_3.setText(_translate("Form", "Путь к базе"))
         self.Label_4.setText(_translate("Form", "Путь к ШК"))
@@ -181,6 +167,4 @@ if __name__ == '__main__':
 
     # Get checkbox states by passing the Form as an argument
     checkbox_states = ui.get_checkbox_states(window)
-    print(checkbox_states)
-
     app.exec()

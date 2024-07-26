@@ -8,7 +8,6 @@ headers = {'Content-Type': 'application/json'}
 domain = 'https://mycego.online/api_rest'
 base_folder = 'Новая база (1)'
 ready_path = 'Заказ'
-
 data_blur = {
         '25': 1.40,
         '37': 1.30,
@@ -19,10 +18,9 @@ data_blur = {
 
 class Config:
     def __init__(self, filename='config.json'):
-        # Устанавливаем имя файла конфигурации и текущую директорию
+        self.union_arts = False
         self.filename = filename
         self.current_dir = Path.cwd()
-        # Загружаем параметры из файла, если файл существует, иначе устанавливаем параметры по умолчанию
         self.load_from_file()
 
     def save_to_file(self):
@@ -34,7 +32,6 @@ class Config:
         # Проверяем, существует ли файл конфигурации
         if not Path(self.filename).exists():
             print('Файл конфигурации не существует. Создан новый.')
-            # Если файл не существует, создаем новый файл и записываем в него параметры по умолчанию
             self.params = {
                 "Автоматическое обновление": True,
                 "categories": {
@@ -55,17 +52,16 @@ class Config:
                 "Путь к базе": "C:\\База",
                 "Путь к шк": "C:\\База\\ШК",
                 "token": "",
-                "machin_name": "Комп не назван"
+                "machin_name": "Комп не назван",
+                "Печать на Мимаки": False
             }
             self.save_to_file()  # Сохраняем параметры в новый файл
         else:
-            # Если файл существует, загружаем параметры из него
             with open(self.filename, 'r', encoding='utf-8') as f:
                 self.params = json.load(f)
 
     def set_param(self, key, value):
         # Устанавливаем новое значение для параметра
-
         if key in self.params:
             self.params[key] = value
             self.save_to_file()  # Сохраняем обновленные параметры в файл
@@ -74,6 +70,7 @@ class Config:
                 self.params['categories'][key] = value
             else:
                 logger.error(f'Параметр "{key}" не найден.')
+                self.params[key] = value
         self.save_to_file()
 
     def reload_settings(self):

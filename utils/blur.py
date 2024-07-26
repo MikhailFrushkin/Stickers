@@ -1,14 +1,17 @@
 import cv2
 import numpy as np
 from loguru import logger
-
+from pathlib import Path
 from config import data_blur
 
 
 def blur_image(image_path, output_path, size_blur):
     # Открываем изображение
+    image_path = str(Path(image_path))
     original_image = cv2.imread(image_path)
-
+    if not original_image:
+        logger.error(f'Ошибка открытия файла: {image_path}')
+        return False
     # Получите размеры изображения
     height, width, _ = original_image.shape
 
@@ -59,6 +62,7 @@ def blur_image(image_path, output_path, size_blur):
     cv2.imwrite(output_path, enlarged_result)
 
     logger.debug(f"Изображение сохранено в: {output_path}")
+    return True
 
 
 if __name__ == '__main__':

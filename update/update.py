@@ -239,17 +239,22 @@ def main_download_site(category: str | list, config, self, download_union_list):
                     if (category == 'Брелки' or category == 'Зеркальца' or category == 'Значки'
                             or (category == 'Попсокеты' and size == '44')):
                         size_blur = size
+                        flag_blur = False
                         for file in os.listdir(folder):
                             file_name, exp = os.path.splitext(file)
                             if file_name.isdigit():
                                 image_path = os.path.join(folder, file)
                                 output_path = os.path.join(folder, f'blur_{file}')
-                                blur_image(image_path, output_path, size_blur)
+                                flag_blur = blur_image(image_path, output_path, size_blur)
                 except Exception as ex:
                     logger.error(ex)
 
                 try:
-                    Article.create_art(folder, art, quantity, size, category_prod, brand, updated_at_in_site)
+                    if (category == 'Брелки' or category == 'Зеркальца' or category == 'Значки'
+                            or (category == 'Попсокеты' and size == '44')) and not flag_blur:
+                        pass
+                    else:
+                        Article.create_art(folder, art, quantity, size, category_prod, brand, updated_at_in_site)
                 except Exception as ex:
                     logger.error(ex)
             except Exception as ex:

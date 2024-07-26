@@ -193,7 +193,7 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
 
         sorted_arts = sorted(arts, key=lambda x: x.quantity, reverse=True)
 
-        if category == 'Наклейки 3-D':
+        if category == 'Наклейки 3-D' or category == 'Наклейки 3-D 90 шт.':
             return created_stickers(sorted_arts, max_folder, category, progress_step=progress_step,
                                     progress_bar=progress_bar)
         else:
@@ -256,6 +256,12 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
             'max_folder': 240,
             'target_size': None
         },
+        'Наклейки 3-D 90 шт.': {
+            'arts': [],
+            'max_folder': 90,
+            'target_size': None
+        },
+
         'Попсокеты ДП': {
             'arts': [],
             'max_folder': 525,
@@ -331,7 +337,10 @@ def create_folder_order(articles, name_doc, list_model, progress_bar):
 
     for article in articles:
         if article.category == 'Наклейки 3-D':
-            categories_dict['Наклейки 3-D']['arts'].append(article)
+            if config_prog.params.get('Печать на Мимаки'):
+                categories_dict['Наклейки 3-D 90 шт.']['arts'].append(article)
+            else:
+                categories_dict['Наклейки 3-D']['arts'].append(article)
         elif article.size == '25' and article.category == 'Попсокеты':
             categories_dict['Попсокеты ДП']['arts'].append(article)
         elif article.category == 'Наклейки квадратные':

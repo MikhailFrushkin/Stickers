@@ -1,6 +1,7 @@
 import asyncio
 import io
 import tempfile
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
 from PIL import Image
@@ -9,6 +10,7 @@ from reportlab.lib.pagesizes import A3, A6
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen import canvas
 
+from config import config_prog
 from utils.utils import mm_to_px, extract_number, update_progres_bar, timer
 
 
@@ -33,6 +35,14 @@ def process_image_sync(image_path, adjusted_a6_width, adjusted_a6_height):
 
 
 async def generate_mini_posters(articles, output_file, progress_step, progress_bar):
+    art_dict = defaultdict(int)
+    if config_prog.union_arts:
+        for article in articles:
+            if article in art_dict:
+                art_dict[article] += 1
+            else:
+                art_dict[article] = 1
+
     a6_width, a6_height = A6
     gap_mm = 2
     gap_px = mm_to_px(gap_mm)
@@ -51,7 +61,9 @@ async def generate_mini_posters(articles, output_file, progress_step, progress_b
         for article in articles:
             image_list_art = article.images.split(';')
             image_list_sorted = sorted(image_list_art, key=extract_number)
-            batched_image_list = [image_list_sorted[i:i + batch_size] for i in range(0, len(image_list_sorted), batch_size)]
+            image_list_sorted.append(article.skin)
+            batched_image_list = [image_list_sorted[i:i + batch_size] for i in
+                                  range(0, len(image_list_sorted), batch_size)]
 
             for batch in batched_image_list:
                 futures = []
@@ -60,7 +72,8 @@ async def generate_mini_posters(articles, output_file, progress_step, progress_b
                     if image_path in image_cache:
                         futures.append(image_cache[image_path])
                     else:
-                        future = loop.run_in_executor(executor, process_image_sync, image_path, adjusted_a6_width, adjusted_a6_height)
+                        future = loop.run_in_executor(executor, process_image_sync, image_path, adjusted_a6_width,
+                                                      adjusted_a6_height)
                         futures.append(future)
                         image_cache[image_path] = future
 
@@ -78,16 +91,28 @@ async def generate_mini_posters(articles, output_file, progress_step, progress_b
                         img_from_buffer.save(in_memory_buffer, format='JPEG')
                         in_memory_buffer.seek(0)
 
-                        # img_from_buffer = Image.open(in_memory_buffer)
-                        pdf_file.drawImage(ImageReader(in_memory_buffer), x_pos, y_pos, width=adjusted_a6_height, height=adjusted_a6_width)
+                        pdf_file.drawImage(ImageReader(in_memory_buffer), x_pos, y_pos, width=adjusted_a6_height,
+                                           height=adjusted_a6_width)
                         image_index += 1
                         total_images += 1
                     else:
-                        logger.warning(f"Изображение не загружено: {image_path}")
+                        logger.error(f"Изображение не загружено: {image_path}")
             update_progres_bar(progress_bar, progress_step)
 
     pdf_file.save()
+
+    # Открываем временный PDF-файл и переворачиваем страницы
+    from PyPDF2 import PdfReader, PdfWriter
+    reader = PdfReader(output_file)
+    writer = PdfWriter()
+
+    for page in reversed(reader.pages):
+        writer.add_page(page)
+
+    with open(output_file, "wb") as final_pdf_file:
+        writer.write(final_pdf_file)
     return total_images
+
 
 def process_image_sync_a3(image_path):
     try:

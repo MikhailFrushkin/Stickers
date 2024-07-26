@@ -26,7 +26,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.version = 4.1
+        self.version = 5
         self.name_doc = ''
         self.current_dir = Path.cwd()
         self.found_articles = []
@@ -114,6 +114,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             for text in self.ui.checkBox_texts:
                 checkbox = self.dialog.findChild(QtWidgets.QCheckBox, f"checkBox_{self.ui.checkBox_texts.index(text)}")
                 if text == "Автоматическое обновление":
+                    checkbox.setChecked(params.get(text, False))
+                elif text == "Печать на Мимаки":
                     checkbox.setChecked(params.get(text, False))
                 else:
                     checkbox.setChecked(params.get('categories', {}).get(text, False))
@@ -246,7 +248,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             thread = threading.Thread(target=bad_arts_fix)
             thread.start()
 
-            mess = f'\nАртикулов: {len(self.found_articles)}\nИзображений: {count_images}\n'
+            mess = f'\nАртикулов: {len(self.found_articles)}\nИзображений всего: {count_images}\n'
             for cat, value in categories_dict.items():
                 if value['arts']:
                     arts = value["arts"]
@@ -396,6 +398,8 @@ if __name__ == '__main__':
     directories = ['files', 'logs', 'base', 'Заказ', 'Файлы связанные с заказом']
     for dir_name in directories:
         os.makedirs(dir_name, exist_ok=True)
+    os.makedirs(config_prog.params.get('Путь к базе'), exist_ok=True)
+    os.makedirs(config_prog.params.get('Путь к шк'), exist_ok=True)
 
     db.connect()
     db.create_tables([Article, Orders, NotFoundArt])
