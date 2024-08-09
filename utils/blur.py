@@ -9,9 +9,11 @@ def blur_image(image_path, output_path, size_blur):
     # Открываем изображение
     image_path = str(Path(image_path))
     original_image = cv2.imread(image_path)
-    if not original_image:
+
+    if original_image is None:
         logger.error(f'Ошибка открытия файла: {image_path}')
         return False
+
     # Получите размеры изображения
     height, width, _ = original_image.shape
 
@@ -25,7 +27,7 @@ def blur_image(image_path, output_path, size_blur):
 
     # Создайте маску круга
     mask = np.zeros((height, width), dtype=np.uint8)
-    cv2.circle(mask, (center_x, center_y), radius, (255, 255, 255), -1)
+    cv2.circle(mask, (center_x, center_y), radius, (255), -1)
 
     # Примените маску к исходному изображению
     result_image[mask > 0] = original_image[mask > 0]
@@ -35,11 +37,7 @@ def blur_image(image_path, output_path, size_blur):
 
     # Создайте круговую маску для result_image
     circle_mask = np.zeros((result_image.shape[0], result_image.shape[1]), dtype=np.uint8)
-    cv2.circle(circle_mask,
-               [result_image.shape[1] // 2, result_image.shape[0] // 2],
-               radius,
-               (255),
-               -1)
+    cv2.circle(circle_mask, [result_image.shape[1] // 2, result_image.shape[0] // 2], radius, (255), -1)
 
     # Вычислите новые размеры увеличенного изображения
     new_height = int(result_image.shape[0] * data_blur[size_blur])
@@ -58,10 +56,9 @@ def blur_image(image_path, output_path, size_blur):
                  enlarged_result[offset_y:offset_y + result_image.shape[0], offset_x:offset_x + result_image.shape[1]])
 
     # Сохраните увеличенное изображение с размытым кругом
-
     cv2.imwrite(output_path, enlarged_result)
 
-    logger.debug(f"Изображение сохранено в: {output_path}")
+    # logger.debug(f"Изображение сохранено в: {output_path}")
     return True
 
 

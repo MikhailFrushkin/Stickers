@@ -208,7 +208,7 @@ def main_download_site(category: str | list, config, self, download_union_list):
 
                 try:
                     if os.path.exists(folder):
-                        logger.warning(f'Файлы артикула существуют {art}, но будут обновлены!')
+                        # logger.warning(f'Файлы артикула существуют {art}, но будут обновлены!')
                         shutil.rmtree(folder, ignore_errors=True)
                     os.makedirs(folder, exist_ok=True)
                 except Exception as ex:

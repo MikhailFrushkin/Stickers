@@ -68,8 +68,7 @@ class Article(Model):
                 filename = filename.strip().lower()
                 if filename.endswith('.pdf'):
                     sticker = file_path
-                    if not os.path.exists(os.path.join(config_prog.params.get('Путь к шк'), filename)):
-                        shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
+                    shutil.copy2(file_path, config_prog.params.get('Путь к шк'))
                 elif 'blur' in filename:
                     image_blur_filenames.append(file_path)
                 elif os.path.splitext(filename)[0].isdigit() or 'принт' in filename:
